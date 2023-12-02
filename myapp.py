@@ -7,17 +7,28 @@ TILESIZE = (80,80)
 PLAYERNORMALSPEED = 0.7
 
 # set window size
-size = width, height = (800, 600)
+size = width, height = (800, 560)
 screen = pygame.display.set_mode(size)
+
 black = (0,0,0)
 white = (255,255,255)
-screen.fill(white)
+#screen.fill(white)
 
+#background
+background = pygame.Surface.copy(screen)
+background.fill(white)
 
-#load images
+for y in range(0, height, TILESIZE[0]):
+    pygame.draw.line(background, black, (0,y), (width,y))
+for x in range(0, width, TILESIZE[1]):
+    pygame.draw.line(background, black, (x,0), (x,height))
+
+#player
 player = pygame.image.load("assets/player/blue_body_squircle.png")
 player_loc = player.get_rect()
-player_loc.center = width/2, height/2
+player_loc.center = TILESIZE[0]/2, TILESIZE[1]/2
+
+screen.blit(background,(0,0))
 
 # update the display to see what we set
 pygame.display.update()
@@ -54,7 +65,7 @@ class keyisdown():
     def getEvents(self):
        
         for event in pygame.event.get():
-            if event.type == QUIT:
+            if event.type == QUIT or (event.type==pygame.KEYDOWN and event.key in [K_ESCAPE]):
                 self.key_queue.clear()
                 return False
             
@@ -145,7 +156,7 @@ while game_running:
             player_loc = player_loc.move(velocity)
 
     #clear the display
-    screen.fill(white)
+    screen.blit(background,(0,0))
 
     # place image on the screen
     screen.blit(player, player_loc)
