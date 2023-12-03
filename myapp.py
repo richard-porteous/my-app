@@ -3,8 +3,12 @@ import pygame
 from pygame.locals import *
 
 
-TILESIZE = (80,80)
-PLAYERNORMALSPEED = 0.7
+SCALESIZE = 0.5
+TILE_SIZE = (80,80)
+TILESIZE = (TILE_SIZE[0] * SCALESIZE, TILE_SIZE[1] * SCALESIZE)
+
+
+PLAYERNORMALSPEED = 0.7 * SCALESIZE
 
 # set window size
 size = width, height = (800, 560)
@@ -18,13 +22,14 @@ white = (255,255,255)
 background = pygame.Surface.copy(screen)
 background.fill(white)
 
-for y in range(0, height, TILESIZE[0]):
+for y in range(0, height, int(TILESIZE[0])):
     pygame.draw.line(background, black, (0,y), (width,y))
-for x in range(0, width, TILESIZE[1]):
+for x in range(0, width, int(TILESIZE[1])):
     pygame.draw.line(background, black, (x,0), (x,height))
 
 #player
 player = pygame.image.load("assets/player/blue_body_squircle.png")
+player = pygame.transform.scale_by(player, 0.5 )
 player_loc = player.get_rect()
 player_loc.center = TILESIZE[0]/2, TILESIZE[1]/2
 
@@ -160,6 +165,7 @@ while game_running:
 
     # place image on the screen
     screen.blit(player, player_loc)
+
     # apply changes
     pygame.display.update()
 
