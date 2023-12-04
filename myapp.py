@@ -1,4 +1,5 @@
 import math
+import random
 import pygame
 from pygame.locals import *
 
@@ -8,7 +9,7 @@ TILE_SIZE = (80,80)
 TILESIZE = (TILE_SIZE[0] * SCALESIZE, TILE_SIZE[1] * SCALESIZE)
 
 
-PLAYERNORMALSPEED = 0.7 * SCALESIZE
+PLAYERNORMALSPEED = 0.4 * SCALESIZE
 
 # set window size
 size = width, height = (800, 560)
@@ -32,6 +33,13 @@ player = pygame.image.load("assets/player/blue_body_squircle.png")
 player = pygame.transform.scale_by(player, 0.5 )
 player_loc = player.get_rect()
 player_loc.center = TILESIZE[0]/2, TILESIZE[1]/2
+
+#food
+eaten = False
+food = pygame.image.load("assets/food/tile_coin.png")
+food = pygame.transform.scale_by(food, 0.5 )
+food_loc = food.get_rect()
+food_loc.center = (TILESIZE[0] * 9 + TILESIZE[0]/2) , (TILESIZE[1] * 9 + TILESIZE[1]/2)
 
 screen.blit(background,(0,0))
 
@@ -148,22 +156,30 @@ while game_running:
 
     # we have a direction
     if direction != (0,0) or new_direction != (0,0):
-        print("movement")
+        #print("movement")
         # are we there yet?
         dist_to_dest = abs(math.dist(player_loc.center, to_tile))
         if (dist_to_dest <= abs(dt_distance)):
             player_loc.center = to_tile
             from_tile = to_tile
-            print("end of contineous movement")
+            #print("end of contineous movement")
             direction = new_direction
         else:
             velocity = (direction[0] * dt_distance, direction[1] * dt_distance)
             player_loc = player_loc.move(velocity)
 
+
+    if (player_loc.center == food_loc.center):
+        x = random.randrange(0, 20)
+        y = random.randrange(0, 14)
+        food_loc.center = (TILESIZE[0] * x + TILESIZE[0]/2) , (TILESIZE[1] * y + TILESIZE[1]/2)
+        
+
     #clear the display
     screen.blit(background,(0,0))
 
     # place image on the screen
+    screen.blit(food, food_loc)
     screen.blit(player, player_loc)
 
     # apply changes
