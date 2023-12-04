@@ -35,7 +35,6 @@ player_loc = player.get_rect()
 player_loc.center = TILESIZE[0]/2, TILESIZE[1]/2
 
 #food
-eaten = False
 food = pygame.image.load("assets/food/tile_coin.png")
 food = pygame.transform.scale_by(food, 0.5 )
 food_loc = food.get_rect()
@@ -140,6 +139,8 @@ delta_time = deltatime()
 direction = (0,0)
 from_tile = player_loc.center
 player_current_speed = PLAYERNORMALSPEED
+continuous = True
+keypress_for_partialtime = False
 
 #game loop
 while game_running:
@@ -163,7 +164,8 @@ while game_running:
             player_loc.center = to_tile
             from_tile = to_tile
             #print("end of contineous movement")
-            direction = new_direction
+            if ((continuous and new_direction != (0,0)) or (continuous != True)):
+                direction = new_direction
         else:
             velocity = (direction[0] * dt_distance, direction[1] * dt_distance)
             player_loc = player_loc.move(velocity)
