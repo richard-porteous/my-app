@@ -178,10 +178,10 @@ while game_running:
         if (dist_to_dest <= abs(dt_distance)):
             player_loc.center = to_tile
             from_tile = to_tile
-            if (not continuous):
-                direction = new_direction
-            else:
+            if (continuous and new_direction == (0,0)):
                 direction = held_keys.get_last_direction_chosen()
+            else:
+                direction = new_direction
         else:
             velocity = (direction[0] * dt_distance, direction[1] * dt_distance)
             player_loc = player_loc.move(velocity)
