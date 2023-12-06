@@ -70,9 +70,10 @@ class deltatime():
     
 
 class keyisdown():
-    
+
     def __init__(self) -> None:
         self.key_queue = []
+        self.last_key_pressed = "none"
 
     def getEvents(self):
        
@@ -84,12 +85,16 @@ class keyisdown():
             # KEEP KEY PRESS ORDER
             if event.type==pygame.KEYDOWN:
                 if event.key in [K_s, K_DOWN]:
+                    self.last_key_pressed = "D"
                     self.key_queue.append("D")
                 if event.key in [K_w, K_UP]:
+                    self.last_key_pressed = "U"
                     self.key_queue.append("U")
                 if event.key in [K_d, K_RIGHT]:
+                    self.last_key_pressed = "R"
                     self.key_queue.append("R")
                 if event.key in [K_a, K_LEFT]:
+                    self.last_key_pressed = "L"
                     self.key_queue.append("L")
 
             # KEEP KEY PRESS ORDER (remove released from middle too)
@@ -129,6 +134,18 @@ class keyisdown():
 
         return(0,0)
 
+    def get_last_direction_chosen(self):
+        match (self.last_key_pressed):
+            case "U":
+                return (0,-1)
+            case "D":
+                return (0,1)
+            case "L":
+                return (-1,0)
+            case "R":
+                return (1,0)
+        return (0,0)
+
     def clean_queue(self):
         self.key_queue = []
         
@@ -157,15 +174,14 @@ while game_running:
 
     # we have a direction
     if direction != (0,0) or new_direction != (0,0):
-        #print("movement")
-        # are we there yet?
         dist_to_dest = abs(math.dist(player_loc.center, to_tile))
         if (dist_to_dest <= abs(dt_distance)):
             player_loc.center = to_tile
             from_tile = to_tile
-            #print("end of contineous movement")
-            if ((continuous and new_direction != (0,0)) or (continuous != True)):
+            if (not continuous):
                 direction = new_direction
+            else:
+                direction = held_keys.get_last_direction_chosen()
         else:
             velocity = (direction[0] * dt_distance, direction[1] * dt_distance)
             player_loc = player_loc.move(velocity)
