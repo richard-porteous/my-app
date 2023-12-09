@@ -59,6 +59,15 @@ class GameObject():
         velocity = (self.direction[0] * dt_distance, self.direction[1] * dt_distance)
         self.rect = self.rect.move(velocity)
 
+    def get_direction_from_start_end(self, start, end):
+        dx = end[0] - start[0]
+        dy = end[1] - start[1]
+        if dx > 0: dx = 1
+        if dx < 0: dx = -1
+        if dy > 0: dy = 1
+        if dy < 0: dy = -1
+
+        return (dx, dy)
 
 class Player(GameObject):
     def __init__(self, speed, tilesize):
@@ -68,6 +77,10 @@ class Player(GameObject):
         self.face_image = pygame.transform.scale_by(self.face_image, 0.5 )
         self.face_rect = self.face_image.get_rect()
         self.face_rect.center = self.rect.center
+
+    def set_destination(self):
+        self.end_move_pos = (self.start_move_pos[0] + self.direction[0] * TILESIZE[0], self.start_move_pos[1] + self.direction[1] * TILESIZE[1])
+
 
     def move(self, dt_distance, new_direction, def_direction, continuous):
         direction = self.direction
@@ -87,10 +100,21 @@ class Player(GameObject):
 class Tail(GameObject):
     def __init__(self, speed, tilesize):
         super().__init__(speed, tilesize, "assets/player/blue_body_circle.png")
+    
+    def set_obj_to_follow(self, obj):
+        self.object_to_follow = obj
+
+    def follow(self, dt_distance):
+        if (self.is_end_of_move(dt_distance)):
+            self.start_move_pos = self.end_move_pos
+            self.end_move_pos = self.object_to_follow.start_move_pos           
+            self.direction = self.get_direction_from_start_end(self.start_move_pos, self.end_move_pos)
+        else:
+            self.keep_moving(dt_distance)
+
 
 
 player = Player(PLAYERNORMALSPEED, TILESIZE)
-player_body = Tail(PLAYERNORMALSPEED, TILESIZE)
 player_tail = []
 
 #food
@@ -216,6 +240,8 @@ delta_time = DeltaTime()
 continuous = True
 keypress_for_partialtime = False
 
+player.end_move_pos = (player.start_move_pos[0] + player.direction[0] * TILESIZE[0], player.start_move_pos[1] + player.direction[1] * TILESIZE[1])
+
 #game loop
 while game_running:
     clock.tick(FPS)
@@ -235,12 +261,21 @@ while game_running:
  
     # do we have a direction?
     player.move(dt_distance,new_direction,def_direction,continuous)
+    for t in player_tail:
+        t.follow(dt_distance)
 
     if (player.rect.center == food_rect.center):
         x = random.randrange(0, 20)
         y = random.randrange(0, 14)
         food_rect.center = (TILESIZE[0] * x + TILESIZE[0]/2) , (TILESIZE[1] * y + TILESIZE[1]/2)
-        player_tail.append(player.rect)
+        t = Tail(PLAYERNORMALSPEED, TILESIZE)
+        t.rect.center = player.rect.center
+        t.end_move_pos = player.rect.center
+        t.start_move_pos = player.rect.center
+        t.object_to_follow = player
+        if (len(player_tail) > 0):
+            player_tail[len(player_tail) - 1].object_to_follow = t
+        player_tail.append(t)
         
 
     #clear the display
@@ -250,8 +285,7 @@ while game_running:
     screen.blit(food, food_rect)
     
     for t in player_tail:
-        if t != player.rect:
-            screen.blit(player_body.image,t)
+        screen.blit(t.image,t.rect)
     
     screen.blit(player.image, player.rect)
     player.face_rect.center = player.rect.center
