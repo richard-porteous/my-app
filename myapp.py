@@ -69,15 +69,15 @@ class Player():
     def move(self, dt_distance, new_direction, def_direction, continuous):
         direction = self.direction
         if direction != (0,0) or new_direction != (0,0):
-            if (player.is_end_of_move(dt_distance)):
+            if (self.is_end_of_move(dt_distance)):
                 if (continuous and new_direction == (0,0)):
                     direction = def_direction
                 else:
                     direction = new_direction
-                player.setup_next_move(direction)
+                self.setup_next_move(direction)
             else:
                 #keep moving we are not there yet
-                player.keep_moving(dt_distance)
+                self.keep_moving(dt_distance)
 
 
 
@@ -87,6 +87,7 @@ class Tail():
         self.image = pygame.transform.scale_by(self.image, 0.5 )
         self.rect = self.image.get_rect()
         #self.rect.center = TILESIZE[0]/2, TILESIZE[1]/2
+
 
 
 
@@ -216,10 +217,6 @@ delta_time = DeltaTime()
 
 continuous = True
 keypress_for_partialtime = False
-
-#player_direction = (0,0)
-#player.speed = PLAYERNORMALSPEED
-#player.start_move_pos = player.rect.center
 
 #game loop
 while game_running:
