@@ -28,18 +28,18 @@ for y in range(0, height, int(TILESIZE[0])):
 for x in range(0, width, int(TILESIZE[1])):
     pygame.draw.line(background, black, (x,0), (x,height))
 
-# use this to optimize images // may need to adjust background color as it assumes black
-def load_image(file):
-    img = pygame.image.load(file)
-    img = img.convert()
-    img = img.convert_alpha()
-    return img
+
+
+
+
 
 class GameObject():
     start_move_pos = (0,0)
     end_move_pos = (0,0)
     direction = (0,0)
+    
     def __init__(self, speed, tilesize, img_file):
+        self.tilesize = tilesize
         self.image = pygame.image.load(img_file)
         self.image = pygame.transform.scale_by(self.image, 0.5 )
         self.rect = self.image.get_rect()
@@ -51,6 +51,8 @@ class GameObject():
         self.direction = direction
         self.rect.center = self.end_move_pos
         self.start_move_pos = self.end_move_pos
+        self.end_move_pos = (self.start_move_pos[0] + self.direction[0] * self.tilesize[0], self.start_move_pos[1] + self.direction[1] * self.tilesize[1])
+
 
     def is_end_of_move(self, dt_distance):
         return abs(math.dist(self.rect.center, self.end_move_pos)) <= abs(dt_distance)
@@ -69,6 +71,8 @@ class GameObject():
 
         return (dx, dy)
 
+
+
 class Player(GameObject):
     def __init__(self, speed, tilesize):
         super().__init__(speed, tilesize, "assets/player/blue_body_squircle.png")
@@ -78,8 +82,6 @@ class Player(GameObject):
         self.face_rect = self.face_image.get_rect()
         self.face_rect.center = self.rect.center
 
-    def set_destination(self):
-        self.end_move_pos = (self.start_move_pos[0] + self.direction[0] * TILESIZE[0], self.start_move_pos[1] + self.direction[1] * TILESIZE[1])
 
 
     def move(self, dt_distance, new_direction, def_direction, continuous):
@@ -240,6 +242,8 @@ delta_time = DeltaTime()
 continuous = True
 keypress_for_partialtime = False
 
+
+#player.setup_next_move((0,0))
 player.end_move_pos = (player.start_move_pos[0] + player.direction[0] * TILESIZE[0], player.start_move_pos[1] + player.direction[1] * TILESIZE[1])
 
 #game loop
@@ -253,8 +257,6 @@ while game_running:
 
     game_running = held_keys.getEvents()
 
-    player.end_move_pos = (player.start_move_pos[0] + player.direction[0] * TILESIZE[0], player.start_move_pos[1] + player.direction[1] * TILESIZE[1])
-    
     direction = player.direction
     new_direction = held_keys.get_first_of_remaining_pressed()
     def_direction = held_keys.get_last_direction_chosen()
@@ -264,17 +266,23 @@ while game_running:
     for t in player_tail:
         t.follow(dt_distance)
 
+    # move food and grow tail
     if (player.rect.center == food_rect.center):
         x = random.randrange(0, 20)
         y = random.randrange(0, 14)
         food_rect.center = (TILESIZE[0] * x + TILESIZE[0]/2) , (TILESIZE[1] * y + TILESIZE[1]/2)
         t = Tail(PLAYERNORMALSPEED, TILESIZE)
-        t.rect.center = player.rect.center
-        t.end_move_pos = player.rect.center
-        t.start_move_pos = player.rect.center
-        t.object_to_follow = player
         if (len(player_tail) > 0):
-            player_tail[len(player_tail) - 1].object_to_follow = t
+            f = player_tail[len(player_tail) - 1]
+            t.rect.center = f.rect.center
+            t.end_move_pos = f.rect.center
+            t.start_move_pos = f.rect.center
+            t.object_to_follow = f
+        else:
+            t.rect.center = player.rect.center
+            t.end_move_pos = player.rect.center
+            t.start_move_pos = player.rect.center
+            t.object_to_follow = player
         player_tail.append(t)
         
 
