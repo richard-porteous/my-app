@@ -255,6 +255,21 @@ def eat_food(TILESIZE, player, food_rect):
         return True
     return False
 
+def grow_tail(TILESIZE, PLAYERNORMALSPEED, Tail, player, player_tail):
+    t = Tail(PLAYERNORMALSPEED, TILESIZE)
+    if (len(player_tail) > 0):
+        f = player_tail[len(player_tail) - 1]
+        t.rect.center = f.rect.center
+        t.end_move_pos = f.rect.center
+        t.start_move_pos = f.rect.center
+        t.object_to_follow = f
+    else:
+        t.rect.center = player.rect.center
+        t.end_move_pos = player.rect.center
+        t.start_move_pos = player.rect.center
+        t.object_to_follow = player
+    player_tail.append(t)
+
 while game_running:
     clock.tick(FPS)
 
@@ -274,21 +289,9 @@ while game_running:
     for t in player_tail:
         t.follow(dt_distance)
 
-    # eat food and grow tail
+
     if eat_food(TILESIZE, player, food_rect):
-        t = Tail(PLAYERNORMALSPEED, TILESIZE)
-        if (len(player_tail) > 0):
-            f = player_tail[len(player_tail) - 1]
-            t.rect.center = f.rect.center
-            t.end_move_pos = f.rect.center
-            t.start_move_pos = f.rect.center
-            t.object_to_follow = f
-        else:
-            t.rect.center = player.rect.center
-            t.end_move_pos = player.rect.center
-            t.start_move_pos = player.rect.center
-            t.object_to_follow = player
-        player_tail.append(t)
+        grow_tail(TILESIZE, PLAYERNORMALSPEED, Tail, player, player_tail)
         
 
     #clear the display
