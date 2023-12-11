@@ -4,41 +4,48 @@ import pygame
 from pygame.locals import *
 
 
+# HARD CODED VALUES
 SCALESIZE = 0.5
 TILE_SIZE = (80,80)
-TILESIZE = (TILE_SIZE[0] * SCALESIZE, TILE_SIZE[1] * SCALESIZE)
-
-
-PLAYERNORMALSPEED = 0.4 * SCALESIZE
-
-# set window size
-size = width, height = (800, 560)
-screen = pygame.display.set_mode(size)
-
+ASPECT = (10,7)
 black = (0,0,0)
 white = (255,255,255)
-#screen.fill(white)
+start_speed = 0.4
+
+PLAYERNORMALSPEED = start_speed * SCALESIZE
+
+# set window size
+screen_size = width, height = (TILE_SIZE[0] * ASPECT[0], TILE_SIZE[0] * ASPECT[1]) # 800,560 if 80x80
+screen = pygame.display.set_mode(screen_size)
+TILESIZE = (TILE_SIZE[0] * SCALESIZE, TILE_SIZE[1] * SCALESIZE)
+
 
 #background
 background = pygame.Surface.copy(screen)
 background.fill(white)
 
+x_tile_pos = []
+y_tile_pos = []
 for y in range(0, height, int(TILESIZE[0])):
+    y_tile_pos.append(y + int(TILESIZE[0])/2)
     pygame.draw.line(background, black, (0,y), (width,y))
 for x in range(0, width, int(TILESIZE[1])):
+    x_tile_pos.append(x + int(TILESIZE[1])/2)
     pygame.draw.line(background, black, (x,0), (x,height))
 
-
-
-
+def get_tile_center_positions():
+    return (x_tile_pos,y_tile_pos) 
 
 
 class GameObject():
     start_move_pos = (0,0)
     end_move_pos = (0,0)
     direction = (0,0)
+    min = (0,0)
+    max = (0,0)
+    boundary_check = "none"
     
-    def __init__(self, speed, tilesize, img_file):
+    def __init__(self, speed, tilesize, img_file, screen_size):
         self.tilesize = tilesize
         self.image = pygame.image.load(img_file)
         self.image = pygame.transform.scale_by(self.image, 0.5 )
@@ -46,12 +53,15 @@ class GameObject():
         self.rect.center = tilesize[0]/2, tilesize[1]/2
         self.start_move_pos = self.rect.center
         self.speed = speed
+        self.max = screen_size
+
 
     def setup_next_move(self, direction):
         self.direction = direction
         self.rect.center = self.end_move_pos
         self.start_move_pos = self.end_move_pos
         self.end_move_pos = (self.start_move_pos[0] + self.direction[0] * self.tilesize[0], self.start_move_pos[1] + self.direction[1] * self.tilesize[1])
+
 
 
     def is_end_of_move(self, dt_distance):
@@ -70,12 +80,41 @@ class GameObject():
         if dy < 0: dy = -1
 
         return (dx, dy)
+    
+    #currently only works with 4 directions
+    def check_boundaries(self):
+        x_pos,y_pos = get_tile_center_positions()
+        
+        if self.boundary_check != "none":
+            return
+        if self.rect.left < 0:
+            self.set_boundary_check("left")
+            self.end_move_pos = (x_pos[len(x_pos) -1], self.rect.center[1])
+            self.setup_next_move(self.direction)
+        if self.rect.right > self.max[0]:
+            self.set_boundary_check("right")
+            self.end_move_pos = (x_pos[0], self.rect.center[1])
+            self.setup_next_move(self.direction)
+        if self.rect.top < 0:
+            self.set_boundary_check("top")
+            self.end_move_pos = (self.rect.center[0], y_pos[len(y_pos) -1])
+            self.setup_next_move(self.direction)
+        if self.rect.bottom > self.max[1]:
+            self.set_boundary_check("bottom")
+            self.end_move_pos = (self.rect.center[0], y_pos[0])
+            self.setup_next_move(self.direction)
 
+
+    def set_boundary_check(self, side):
+        self.boundary_check = side
+
+    def update(self, screen):
+        screen.blit(self.image,self.rect)
 
 
 class Player(GameObject):
-    def __init__(self, speed, tilesize):
-        super().__init__(speed, tilesize, "assets/player/blue_body_squircle.png")
+    def __init__(self, speed, tilesize, screen_size):
+        super().__init__(speed, tilesize, "assets/player/blue_body_squircle.png", screen_size)
 
         self.face_image = pygame.image.load("assets/player/face_a.png")
         self.face_image = pygame.transform.scale_by(self.face_image, 0.5 )
@@ -88,6 +127,7 @@ class Player(GameObject):
         direction = self.direction
         if direction != (0,0) or new_direction != (0,0):
             if (self.is_end_of_move(dt_distance)):
+                self.set_boundary_check("none")
                 if (continuous and new_direction == (0,0)):
                     direction = def_direction
                 else:
@@ -97,13 +137,39 @@ class Player(GameObject):
             else:
                 #keep moving we are not there yet
                 self.keep_moving(dt_distance)
+                self.check_boundaries()
         return False
+
+    def update(self,screen):
+        super().update(screen)
+        self.face_rect.center = self.rect.center
+        screen.blit(self.face_image, self.face_rect)
+
+        if (self.boundary_check == "left"):
+            shifted_rect = pygame.Rect(self.rect[0] - self.max[0], self.rect[1], self.rect[2], self.rect[3])
+            shifted_face_rect = pygame.Rect(self.face_rect[0] - self.max[0], self.face_rect[1], self.face_rect[2], self.face_rect[3])
+        elif (self.boundary_check == "right"):
+            shifted_rect = pygame.Rect(self.rect[0], self.rect[1], self.rect[2] + self.max[0], self.rect[3])
+            shifted_face_rect = pygame.Rect(self.face_rect[0], self.face_rect[1], self.face_rect[2] + self.max[0], self.face_rect[3])
+        elif (self.boundary_check == "top"):
+            shifted_rect = pygame.Rect(self.rect[0], self.rect[1] + self.max[1], self.rect[2], self.rect[3])
+            shifted_face_rect = pygame.Rect(self.face_rect[0], self.face_rect[1] + self.max[1], self.face_rect[2], self.face_rect[3])
+        elif (self.boundary_check == "bottom"):
+            shifted_rect = pygame.Rect(self.rect[0], self.rect[1], self.rect[2], self.rect[3] - self.max[1])
+            shifted_face_rect = pygame.Rect(self.face_rect[0], self.face_rect[1], self.face_rect[2], self.face_rect[3] - self.max[1])
+
+        if (self.boundary_check in ["left", "right", "bottom", "top"]):
+            screen.blit(self.image, shifted_rect)
+            screen.blit(self.face_image, shifted_face_rect)
+
+
+#Rect(left, top, width, height)
 
 
 
 class Tail(GameObject):
-    def __init__(self, speed, tilesize):
-        super().__init__(speed, tilesize, "assets/player/blue_body_circle.png")
+    def __init__(self, speed, tilesize, screen_size):
+        super().__init__(speed, tilesize, "assets/player/blue_body_circle.png", screen_size)
     
     def set_obj_to_follow(self, obj):
         self.object_to_follow = obj
@@ -119,7 +185,7 @@ class Tail(GameObject):
 
 
 
-player = Player(PLAYERNORMALSPEED, TILESIZE)
+player = Player(PLAYERNORMALSPEED, TILESIZE, screen_size)
 player_tail = []
 
 #food
@@ -195,8 +261,6 @@ class KeyInput():
                     self.key_queue.remove("R")
                 if event.key in [K_a, K_LEFT]:
                     self.key_queue.remove("L")
-        #if(self.upkey or self.rightkey or self.downkey or self.leftkey):
-        #    print("up",self.upkey, "right", self.rightkey, "down", self.downkey, "left", self.leftkey)
         return True
     
     def get_first_of_remaining_pressed(self):
@@ -258,8 +322,8 @@ def eat_food(TILESIZE, player, food_rect):
         return True
     return False
 
-def grow_tail(TILESIZE, PLAYERNORMALSPEED, Tail, player, player_tail):
-    t = Tail(PLAYERNORMALSPEED, TILESIZE)
+def grow_tail(TILESIZE, screen_size, PLAYERNORMALSPEED, Tail, player, player_tail):
+    t = Tail(PLAYERNORMALSPEED, TILESIZE, screen_size)
     if (len(player_tail) > 0):
         f = player_tail[len(player_tail) - 1]
         t.rect.center = f.rect.center
@@ -297,7 +361,7 @@ while game_running:
 
 
     if eat_food(TILESIZE, player, food_rect):
-        grow_tail(TILESIZE, PLAYERNORMALSPEED, Tail, player, player_tail)
+        grow_tail(TILESIZE, screen_size, PLAYERNORMALSPEED, Tail, player, player_tail)
         
 
     #clear the display
@@ -307,9 +371,10 @@ while game_running:
     screen.blit(food, food_rect)
     
     for t in player_tail:
-        screen.blit(t.image,t.rect)
+        t.update(screen)
     
-    screen.blit(player.image, player.rect)
+    player.update(screen)
+
     player.face_rect.center = player.rect.center
     screen.blit(player.face_image, player.face_rect)
 
