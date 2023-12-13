@@ -134,7 +134,7 @@ class GameObject():
         self.max = screen_size
 
 
-    def position_for_next_move(self, direction):
+    def setup_next_move(self, direction):
         self.direction = self.fix_direction(direction)
         self.rect.center = self.end_move_pos
         self.start_move_pos = self.end_move_pos
@@ -186,7 +186,7 @@ class GameObject():
             self.end_move_pos = (self.rect.center[0], y_pos[0] - self.tilesize[1])
 
         if self.boundary_check in ["left","right","top","bottom"]:
-            self.position_for_next_move(self.direction)
+            self.setup_next_move(self.direction)
 
     def set_boundary_check(self, side):
         self.boundary_check = side
@@ -256,7 +256,7 @@ class Player(GameObject):
                     direction = def_direction
                 else:
                     direction = new_direction
-                self.position_for_next_move(direction)
+                self.setup_next_move(direction)
                 return True
 
             else:
