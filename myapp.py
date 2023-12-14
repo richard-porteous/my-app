@@ -2,7 +2,7 @@ import math
 import random
 import pygame
 from pygame.locals import *
-from game_classes import *
+from mygame_library import *
 
 
 #### HARD CODED VALUES
@@ -31,6 +31,9 @@ class GameObject():
     max = (0,0)
     boundary_check = "none"
     last_end_move_pos = (0,0)
+    last_start_move_pos = (0,0)
+    last_direction = (0,0)
+    last_boundary_check = "none"
     
     def __init__(self, speed, tilesize, img_file, screen_size):
         self.tilesize = tilesize
@@ -152,6 +155,9 @@ class Player(GameObject):
 
     def setup_next_move(self, direction, end_move_pos):
         self.last_end_move_pos = self.end_move_pos
+        self.last_start_move_pos = self.start_move_pos
+        self.last_direction = self.direction
+        self.last_boundary_check = self.boundary_check
 
         self.direction = self.fix_direction(direction)
         self.rect.center = end_move_pos
@@ -164,12 +170,12 @@ class Player(GameObject):
         if direction != (0,0) or new_direction != (0,0):
 
             if (self.is_end_of_move(dt_distance)):
-                self.set_boundary_check("none")
                 if (continuous and new_direction == (0,0)):
                     direction = def_direction
                 else:
                     direction = new_direction
                 self.setup_next_move(direction, self.end_move_pos)
+                self.set_boundary_check("none")
                 return True
 
             else:
@@ -195,11 +201,17 @@ class Tail(GameObject):
     
     def complete_move(self):
         self.last_end_move_pos = self.end_move_pos
+        self.last_start_move_pos = self.start_move_pos
+        self.last_direction = self.direction
+        self.last_boundary_check = self.boundary_check
 
-        self.rect.center = self.end_move_pos
-        self.start_move_pos = self.end_move_pos
-        self.end_move_pos = self.object_to_follow.last_end_move_pos           
-        self.direction = self.fix_direction(self.end_move_pos, self.start_move_pos)
+        
+        self.rect.center = self.object_to_follow.last_start_move_pos
+        self.start_move_pos = self.object_to_follow.last_start_move_pos
+        self.end_move_pos = self.object_to_follow.last_end_move_pos
+        self.boundary_check = self.object_to_follow.last_boundary_check
+           
+        self.direction = self.object_to_follow.last_direction #self.fix_direction(self.end_move_pos, self.start_move_pos)
 
     def follow(self, dt_distance):
         self.check_boundaries()
@@ -209,11 +221,12 @@ class Tail(GameObject):
         if move_start:
             t.complete_move()
         else:
-            self.check_boundaries()
             t.follow(dt_distance)
         
     def update(self,screen):
         super().update(screen)
+        self.draw_alter_ego(self.rect,self.image,screen)
+
 
 
 # START OF GAME CODE
