@@ -93,9 +93,11 @@ class Player(GameObject):
                 else:
                     direction = new_direction
                 self.setup_next_move(direction)
+                return True
             else:
                 #keep moving we are not there yet
                 self.keep_moving(dt_distance)
+        return False
 
 
 
@@ -106,13 +108,14 @@ class Tail(GameObject):
     def set_obj_to_follow(self, obj):
         self.object_to_follow = obj
 
+    def complete_move(self):
+        self.start_move_pos = self.end_move_pos
+        self.rect.center = self.end_move_pos
+        self.end_move_pos = self.object_to_follow.start_move_pos           
+        self.direction = self.get_direction_from_start_end(self.start_move_pos, self.end_move_pos)
+
     def follow(self, dt_distance):
-        if (self.is_end_of_move(dt_distance)):
-            self.start_move_pos = self.end_move_pos
-            self.end_move_pos = self.object_to_follow.start_move_pos           
-            self.direction = self.get_direction_from_start_end(self.start_move_pos, self.end_move_pos)
-        else:
-            self.keep_moving(dt_distance)
+        self.keep_moving(dt_distance)
 
 
 
@@ -257,6 +260,21 @@ def eat_food(TILESIZE, player, food_rect):
         return True
     return False
 
+def grow_tail(TILESIZE, PLAYERNORMALSPEED, Tail, player, player_tail):
+    t = Tail(PLAYERNORMALSPEED, TILESIZE)
+    if (len(player_tail) > 0):
+        f = player_tail[len(player_tail) - 1]
+        t.rect.center = f.rect.center
+        t.end_move_pos = f.rect.center
+        t.start_move_pos = f.rect.center
+        t.object_to_follow = f
+    else:
+        t.rect.center = player.rect.center
+        t.end_move_pos = player.rect.center
+        t.start_move_pos = player.rect.center
+        t.object_to_follow = player
+    player_tail.append(t)
+
 while game_running:
     clock.tick(FPS)
 
@@ -272,25 +290,16 @@ while game_running:
     def_direction = held_keys.get_last_direction_chosen()
  
     # do we have a direction?
-    player.move(dt_distance,new_direction,def_direction,continuous)
+    move_start = player.move(dt_distance,new_direction,def_direction,continuous)
     for t in player_tail:
-        t.follow(dt_distance)
-
-    # eat food and grow tail
-    if eat_food(TILESIZE, player, food_rect):
-        t = Tail(PLAYERNORMALSPEED, TILESIZE)
-        if (len(player_tail) > 0):
-            f = player_tail[len(player_tail) - 1]
-            t.rect.center = f.rect.center
-            t.end_move_pos = f.rect.center
-            t.start_move_pos = f.rect.center
-            t.object_to_follow = f
+        if move_start:
+            t.complete_move()
         else:
-            t.rect.center = player.rect.center
-            t.end_move_pos = player.rect.center
-            t.start_move_pos = player.rect.center
-            t.object_to_follow = player
-        player_tail.append(t)
+            t.follow(dt_distance)
+
+
+    if eat_food(TILESIZE, player, food_rect):
+        grow_tail(TILESIZE, PLAYERNORMALSPEED, Tail, player, player_tail)
         
 
     #clear the display
