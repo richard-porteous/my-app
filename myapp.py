@@ -28,6 +28,13 @@ for y in range(0, height, int(TILESIZE[0])):
 for x in range(0, width, int(TILESIZE[1])):
     pygame.draw.line(background, black, (x,0), (x,height))
 
+# use this to optimize images // may need to adjust background color as it assumes black
+def load_image(file):
+    img = pygame.image.load(file)
+    img = img.convert()
+    img = img.convert_alpha()
+    return img
+
 #player
 player = pygame.image.load("assets/player/blue_body_squircle.png")
 player_body = pygame.image.load("assets/player/blue_body_circle.png")
@@ -35,15 +42,17 @@ player_face = pygame.image.load("assets/player/face_a.png")
 player = pygame.transform.scale_by(player, 0.5 )
 player_body = pygame.transform.scale_by(player_body, 0.5 )
 player_face = pygame.transform.scale_by(player_face, 0.5 )
-player_loc = player.get_rect()
-player_loc.center = TILESIZE[0]/2, TILESIZE[1]/2
+player_rect = player.get_rect()
+player_face_rect = player_face.get_rect()
+player_rect.center = TILESIZE[0]/2, TILESIZE[1]/2
+player_face_rect.center = player_rect.center
 player_tail = []
 
 #food
 food = pygame.image.load("assets/food/tile_coin.png")
 food = pygame.transform.scale_by(food, 0.5 )
-food_loc = food.get_rect()
-food_loc.center = (TILESIZE[0] * 9 + TILESIZE[0]/2) , (TILESIZE[1] * 9 + TILESIZE[1]/2)
+food_rect = food.get_rect()
+food_rect.center = (TILESIZE[0] * 9 + TILESIZE[0]/2) , (TILESIZE[1] * 9 + TILESIZE[1]/2)
 
 screen.blit(background,(0,0))
 
@@ -161,7 +170,7 @@ class keyisdown():
 held_keys = keyisdown()
 delta_time = deltatime()
 direction = (0,0)
-from_tile = player_loc.center
+from_tile = player_rect.center
 player_current_speed = PLAYERNORMALSPEED
 continuous = True
 keypress_for_partialtime = False
@@ -181,9 +190,9 @@ while game_running:
 
     # we have a direction
     if direction != (0,0) or new_direction != (0,0):
-        dist_to_dest = abs(math.dist(player_loc.center, to_tile))
+        dist_to_dest = abs(math.dist(player_rect.center, to_tile))
         if (dist_to_dest <= abs(dt_distance)):
-            player_loc.center = to_tile
+            player_rect.center = to_tile
             from_tile = to_tile
             if (continuous and new_direction == (0,0)):
                 direction = held_keys.get_last_direction_chosen()
@@ -191,28 +200,29 @@ while game_running:
                 direction = new_direction
         else:
             velocity = (direction[0] * dt_distance, direction[1] * dt_distance)
-            player_loc = player_loc.move(velocity)
+            player_rect = player_rect.move(velocity)
 
 
-    if (player_loc.center == food_loc.center):
+    if (player_rect.center == food_rect.center):
         x = random.randrange(0, 20)
         y = random.randrange(0, 14)
-        food_loc.center = (TILESIZE[0] * x + TILESIZE[0]/2) , (TILESIZE[1] * y + TILESIZE[1]/2)
-        player_tail.append(player_loc)
+        food_rect.center = (TILESIZE[0] * x + TILESIZE[0]/2) , (TILESIZE[1] * y + TILESIZE[1]/2)
+        player_tail.append(player_rect)
         
 
     #clear the display
     screen.blit(background,(0,0))
 
     # place image on the screen
-    screen.blit(food, food_loc)
+    screen.blit(food, food_rect)
     
     for t in player_tail:
-        if t != player_loc:
+        if t != player_rect:
             screen.blit(player_body,t)
     
-    screen.blit(player, player_loc)
-    screen.blit(player_face, player_loc)
+    screen.blit(player, player_rect)
+    player_face_rect.center = player_rect.center
+    screen.blit(player_face, player_face_rect)
 
     # apply changes
     pygame.display.update()
