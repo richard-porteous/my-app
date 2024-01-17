@@ -2,6 +2,7 @@ import math
 import random
 import pygame
 from pygame.locals import *
+from game_classes import *
 
 
 #### HARD CODED VALUES
@@ -21,99 +22,6 @@ screen_size = width, height = (STANDARD_IMAGE_SIZE[0] * ASPECT[0], STANDARD_IMAG
 screen = pygame.display.set_mode(screen_size)
 
 
-# time based movement requires delta time
-class DeltaTime():
-    def __init__(self):
-        self.last_loop = pygame.time.get_ticks()
-        self.dt = 0
-
-
-    def loop_time(self) -> int:
-        time_now_ms = pygame.time.get_ticks()
-        dt = time_now_ms - self.last_loop
-        self.last_loop = time_now_ms
-        return dt
-    
-
-class KeyInput():
-
-    def __init__(self) -> None:
-        self.key_queue = []
-        self.last_key_pressed = "none"
-
-    def getEvents(self):
-       
-        for event in pygame.event.get():
-            if event.type == QUIT or (event.type==pygame.KEYDOWN and event.key in [K_ESCAPE]):
-                self.key_queue.clear()
-                return False
-            
-            # KEEP KEY PRESS ORDER
-            if event.type==pygame.KEYDOWN:
-                if event.key in [K_s, K_DOWN]:
-                    self.last_key_pressed = "D"
-                    self.key_queue.append("D")
-                if event.key in [K_w, K_UP]:
-                    self.last_key_pressed = "U"
-                    self.key_queue.append("U")
-                if event.key in [K_d, K_RIGHT]:
-                    self.last_key_pressed = "R"
-                    self.key_queue.append("R")
-                if event.key in [K_a, K_LEFT]:
-                    self.last_key_pressed = "L"
-                    self.key_queue.append("L")
-
-            # KEEP KEY PRESS ORDER (remove released from middle too)
-            if event.type==pygame.KEYUP:
-                if event.key in [K_s, K_DOWN]:
-                    self.key_queue.remove("D")
-                if event.key in [K_w, K_UP]:
-                    self.key_queue.remove("U")
-                if event.key in [K_d, K_RIGHT]:
-                    self.key_queue.remove("R")
-                if event.key in [K_a, K_LEFT]:
-                    self.key_queue.remove("L")
-        return True
-    
-    def get_first_of_remaining_pressed(self):
-        keys = pygame.key.get_pressed()
-
-        while(len(self.key_queue) > 0):
-            match (self.key_queue[0]): 
-                case "U":
-                    if keys[pygame.K_UP] or keys[pygame.K_w]:
-                        return (0,-1)
-                case "D":
-                    if keys[pygame.K_DOWN] or keys[pygame.K_s]:
-                        return (0,1)
-                case "L":
-                    if keys[pygame.K_LEFT] or keys[pygame.K_a]:
-                        return (-1,0)
-                case "R":
-                    if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
-                        return (1,0)
-            
-            #in-valid front of queue items are removed
-            self.key_queue.pop(0)
-
-        return(0,0)
-
-    def get_last_direction_chosen(self):
-        match (self.last_key_pressed):
-            case "U":
-                return (0,-1)
-            case "D":
-                return (0,1)
-            case "L":
-                return (-1,0)
-            case "R":
-                return (1,0)
-        return (0,0)
-
-    def clean_queue(self):
-        self.key_queue = []
-        
-
 
 class GameObject():
     start_move_pos = (0,0)
@@ -122,6 +30,7 @@ class GameObject():
     min = (0,0)
     max = (0,0)
     boundary_check = "none"
+    last_end_move_pos = (0,0)
     
     def __init__(self, speed, tilesize, img_file, screen_size):
         self.tilesize = tilesize
@@ -132,13 +41,6 @@ class GameObject():
         self.start_move_pos = self.rect.center
         self.speed = speed
         self.max = screen_size
-
-
-    def setup_next_move(self, direction):
-        self.direction = self.fix_direction(direction)
-        self.rect.center = self.end_move_pos
-        self.start_move_pos = self.end_move_pos
-        self.end_move_pos = (self.start_move_pos[0] + self.direction[0] * self.tilesize[0], self.start_move_pos[1] + self.direction[1] * self.tilesize[1])
 
 
 
@@ -169,24 +71,27 @@ class GameObject():
         
         if self.boundary_check != "none":
             return
+        
+        end_move_pos = self.end_move_pos
+
         if self.rect.left <= 0 and self.direction[0] < 0:
             self.set_boundary_check("left")
-            self.end_move_pos = (x_pos[len(x_pos) -1] + self.tilesize[0], self.rect.center[1])
+            end_move_pos = (x_pos[len(x_pos) -1] + self.tilesize[0], self.rect.center[1])
             
         if self.rect.right >= self.max[0] and self.direction[0] > 0:
             self.set_boundary_check("right")
-            self.end_move_pos = (x_pos[0] - self.tilesize[0], self.rect.center[1])
+            end_move_pos = (x_pos[0] - self.tilesize[0], self.rect.center[1])
 
         if self.rect.top <= 0 and self.direction[1] < 0:
             self.set_boundary_check("top")
-            self.end_move_pos = (self.rect.center[0], y_pos[len(y_pos) -1] + self.tilesize[1])
+            end_move_pos = (self.rect.center[0], y_pos[len(y_pos) -1] + self.tilesize[1])
 
         if self.rect.bottom >= self.max[1] and self.direction[1] > 0:
             self.set_boundary_check("bottom")
-            self.end_move_pos = (self.rect.center[0], y_pos[0] - self.tilesize[1])
+            end_move_pos = (self.rect.center[0], y_pos[0] - self.tilesize[1])
 
         if self.boundary_check in ["left","right","top","bottom"]:
-            self.setup_next_move(self.direction)
+            self.setup_next_move(self.direction, end_move_pos)
 
     def set_boundary_check(self, side):
         self.boundary_check = side
@@ -245,6 +150,14 @@ class Player(GameObject):
             t.object_to_follow = player
         player_tail.append(t)
 
+    def setup_next_move(self, direction, end_move_pos):
+        self.last_end_move_pos = self.end_move_pos
+
+        self.direction = self.fix_direction(direction)
+        self.rect.center = end_move_pos
+        self.start_move_pos = end_move_pos
+        self.end_move_pos = (self.start_move_pos[0] + self.direction[0] * self.tilesize[0], self.start_move_pos[1] + self.direction[1] * self.tilesize[1])
+
 
     def move(self, dt_distance, new_direction, def_direction, continuous):
         direction = self.direction
@@ -256,7 +169,7 @@ class Player(GameObject):
                     direction = def_direction
                 else:
                     direction = new_direction
-                self.setup_next_move(direction)
+                self.setup_next_move(direction, self.end_move_pos)
                 return True
 
             else:
@@ -280,13 +193,12 @@ class Tail(GameObject):
     def __init__(self, speed, tilesize, screen_size):
         super().__init__(speed, tilesize, "assets/player/blue_body_circle.png", screen_size)
     
-    def set_obj_to_follow(self, obj):
-        self.object_to_follow = obj
-
     def complete_move(self):
+        self.last_end_move_pos = self.end_move_pos
+
         self.rect.center = self.end_move_pos
         self.start_move_pos = self.end_move_pos
-        self.end_move_pos = self.object_to_follow.start_move_pos           
+        self.end_move_pos = self.object_to_follow.last_end_move_pos           
         self.direction = self.fix_direction(self.end_move_pos, self.start_move_pos)
 
     def follow(self, dt_distance):
@@ -297,6 +209,7 @@ class Tail(GameObject):
         if move_start:
             t.complete_move()
         else:
+            self.check_boundaries()
             t.follow(dt_distance)
         
     def update(self,screen):
