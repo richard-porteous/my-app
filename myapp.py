@@ -16,14 +16,8 @@ player = pygame.image.load("assets/player/blue_body_squircle.png")
 player_loc = player.get_rect()
 player_loc.center = width/2, height/2
 
-
-
-
 # update the display to see what we set
 pygame.display.update()
-
-
-
 
 # Initialize the pygame code
 pygame.init()
@@ -31,17 +25,24 @@ pygame.init()
 clock = pygame.time.Clock()
 FPS = 60
 
+speed = 10
+# control variable
+game_running = True
+
 class keyisdown():
-   
+    
     def __init__(self) -> None:
         self.leftkey = False
         self.rightkey = False
         self.upkey = False
         self.downkey = False
+        self.key_queue = []
+
     def getEvents(self):
        
         for event in pygame.event.get():
             if event.type == QUIT:
+                self.key_queue.clear()
                 return False
            
             if event.type==pygame.KEYDOWN:
@@ -49,28 +50,60 @@ class keyisdown():
                     return False
                 if event.key in [K_s, K_DOWN]:
                     self.downkey = True
+                    self.key_queue.append("D")
                 if event.key in [K_w, K_UP]:
                     self.upkey = True
+                    self.key_queue.append("U")
                 if event.key in [K_d, K_RIGHT]:
                     self.rightkey = True
+                    self.key_queue.append("R")
                 if event.key in [K_a, K_LEFT]:
                     self.leftkey = True
+                    self.key_queue.append("L")
                
-            elif event.type==pygame.KEYUP:
+            if event.type==pygame.KEYUP:
                 if event.key in [K_s, K_DOWN]:
                     self.downkey = False
+                    self.key_queue.remove("D")
                 if event.key in [K_w, K_UP]:
                     self.upkey = False
+                    self.key_queue.remove("U")
                 if event.key in [K_d, K_RIGHT]:
                     self.rightkey = False
+                    self.key_queue.remove("R")
                 if event.key in [K_a, K_LEFT]:
                     self.leftkey = False
+                    self.key_queue.remove("L")
+        #if(self.upkey or self.rightkey or self.downkey or self.leftkey):
+        #    print("up",self.upkey, "right", self.rightkey, "down", self.downkey, "left", self.leftkey)
         return True
+    
+    def get_first_of_remaining_pressed(self):
+        while(len(self.key_queue) > 0):
+            match (self.key_queue[0]): 
+                case "U":
+                    if self.upkey:
+                        return (0,-speed)
+                case "D":
+                    if self.downkey:
+                        return (0,speed)
+                case "L":
+                    if self.leftkey:
+                        return (-speed,0)
+                case "R":
+                    if self.rightkey:
+                        return (speed,0)
+            
+            #should be removed if invalid or no longer valid
+            self.key_queue.pop(0)
+
+        return(0,0)
+
+    def clean_queue(self):
+        self.key_queue = []
+        
 
 held_keys = keyisdown()
-speed = 10
-# control variable
-game_running = True
 
 
 #game loop
@@ -78,18 +111,8 @@ while game_running:
     clock.tick(FPS)
 
     game_running = held_keys.getEvents()
-    x=0
-    y=0
-    if held_keys.leftkey:
-        x += -speed
-    if held_keys.rightkey:
-        x += speed
-    if held_keys.upkey:
-        y += -speed
-    if held_keys.downkey:
-        y += speed
-
-    player_loc = player_loc.move([x, y])
+    velocity = (x,y) = held_keys.get_first_of_remaining_pressed()
+    player_loc = player_loc.move(velocity)
 
     #clear the display
     screen.fill(white)
@@ -98,7 +121,6 @@ while game_running:
     screen.blit(player, player_loc)
     # apply changes
     pygame.display.update()
-
 
 
 # quit the pygame window
