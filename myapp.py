@@ -44,8 +44,10 @@ class GameObject():
         self.start_move_pos = self.rect.center
         self.speed = speed
         self.max = screen_size
+        self.collide_rect = Rect(self.rect[0] + self.rect[2]/2, self.rect[1] + self.rect[3]/2, self.rect[2]/2, self.rect[3]/2) #left,top,width,height
+        self.just_created = True
 
-
+    
 
     def is_end_of_move(self, dt_distance):
         return abs(math.dist(self.rect.center, self.end_move_pos)) <= abs(dt_distance)
@@ -122,7 +124,6 @@ class GameObject():
 class Player(GameObject):
     def __init__(self, speed, tilesize, screen_size):
         super().__init__(speed, tilesize, "assets/player/blue_body_squircle.png", screen_size)
-
         self.face_image = pygame.image.load("assets/player/face_a.png")
         self.face_image = pygame.transform.scale_by(self.face_image, 0.5 )
         self.face_rect = self.face_image.get_rect()
@@ -138,6 +139,12 @@ class Player(GameObject):
             return True
         return False
     
+    def collide(self, tails):
+        for t in tails:
+            if pygame.Rect.colliderect(self.collide_rect, t.collide_rect) and t.just_created == False:
+                return True
+        return False
+
     def grow_tail(self, screen_size, start_speed, Tail, player, player_tail):
         t = Tail(start_speed, self.tilesize, screen_size)
         if (len(player_tail) > 0):
@@ -170,6 +177,7 @@ class Player(GameObject):
         if direction != (0,0) or new_direction != (0,0):
 
             if (self.is_end_of_move(dt_distance)):
+                self.collide_rect.center = self.rect.center
                 if (continuous and new_direction == (0,0)):
                     direction = def_direction
                 else:
@@ -179,6 +187,7 @@ class Player(GameObject):
                 return True
 
             else:
+                self.collide_rect.center = self.rect.center
                 #keep moving we are not there yet
                 self.check_boundaries()
                 self.keep_moving(dt_distance)
@@ -219,8 +228,11 @@ class Tail(GameObject):
 
     def move(self, move_start, dt_distance):
         if move_start:
+            self.collide_rect.center = self.rect.center
+            self.just_created = False
             t.complete_move()
         else:
+            self.collide_rect.center = self.rect.center
             t.follow(dt_distance)
         
     def update(self,screen):
@@ -324,6 +336,8 @@ while game_running:
     # apply changes
     pygame.display.update()
 
+    if player.collide(player_tail):
+        game_running = False
 
 # quit the pygame window
 pygame.quit()
