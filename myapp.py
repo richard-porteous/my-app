@@ -35,22 +35,15 @@ def load_image(file):
     img = img.convert_alpha()
     return img
 
-
-class Player():
+class GameObject():
     start_move_pos = (0,0)
     end_move_pos = (0,0)
     direction = (0,0)
-    def __init__(self, speed):
-        self.image = pygame.image.load("assets/player/blue_body_squircle.png")
+    def __init__(self, speed, tilesize, img_file):
+        self.image = pygame.image.load(img_file)
         self.image = pygame.transform.scale_by(self.image, 0.5 )
         self.rect = self.image.get_rect()
-        self.rect.center = TILESIZE[0]/2, TILESIZE[1]/2
-
-        self.face_image = pygame.image.load("assets/player/face_a.png")
-        self.face_image = pygame.transform.scale_by(self.face_image, 0.5 )
-
-        self.face_rect = self.face_image.get_rect()
-        self.face_rect.center = self.rect.center
+        self.rect.center = tilesize[0]/2, tilesize[1]/2
         self.start_move_pos = self.rect.center
         self.speed = speed
 
@@ -65,6 +58,16 @@ class Player():
     def keep_moving(self, dt_distance):
         velocity = (self.direction[0] * dt_distance, self.direction[1] * dt_distance)
         self.rect = self.rect.move(velocity)
+
+
+class Player(GameObject):
+    def __init__(self, speed, tilesize):
+        super().__init__(speed, tilesize, "assets/player/blue_body_squircle.png")
+
+        self.face_image = pygame.image.load("assets/player/face_a.png")
+        self.face_image = pygame.transform.scale_by(self.face_image, 0.5 )
+        self.face_rect = self.face_image.get_rect()
+        self.face_rect.center = self.rect.center
 
     def move(self, dt_distance, new_direction, def_direction, continuous):
         direction = self.direction
@@ -81,18 +84,13 @@ class Player():
 
 
 
-class Tail():
-    def __init__(self):
-        self.image = pygame.image.load("assets/player/blue_body_circle.png")
-        self.image = pygame.transform.scale_by(self.image, 0.5 )
-        self.rect = self.image.get_rect()
-        #self.rect.center = TILESIZE[0]/2, TILESIZE[1]/2
+class Tail(GameObject):
+    def __init__(self, speed, tilesize):
+        super().__init__(speed, tilesize, "assets/player/blue_body_circle.png")
 
 
-
-
-player = Player(PLAYERNORMALSPEED)
-player_body = Tail()
+player = Player(PLAYERNORMALSPEED, TILESIZE)
+player_body = Tail(PLAYERNORMALSPEED, TILESIZE)
 player_tail = []
 
 #food
