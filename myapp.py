@@ -70,7 +70,7 @@ FPS = 60
 game_running = True
 
 # time based movement requires delta time
-class deltatime():
+class DeltaTime():
     def __init__(self):
         self.last_loop = pygame.time.get_ticks()
         self.dt = 0
@@ -83,7 +83,7 @@ class deltatime():
         return dt
     
 
-class keyisdown():
+class KeyInput():
 
     def __init__(self) -> None:
         self.key_queue = []
@@ -167,8 +167,8 @@ class keyisdown():
         
 
 #initialize the classes
-held_keys = keyisdown()
-delta_time = deltatime()
+held_keys = KeyInput()
+delta_time = DeltaTime()
 direction = (0,0)
 from_tile = player_rect.center
 player_current_speed = PLAYERNORMALSPEED
