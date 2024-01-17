@@ -99,7 +99,7 @@ class GameObject():
     def set_boundary_check(self, side):
         self.boundary_check = side
 
-    def draw_alter_ego(self,rect,image,screen):
+    def draw_wrap_image(self,rect,image,screen):
 
         # Draw echo/ghost/disapearing-character  Rect(left, top, width, height)
         if (self.boundary_check == "left"):
@@ -190,8 +190,8 @@ class Player(GameObject):
         self.face_rect.center = self.rect.center
         screen.blit(self.face_image, self.face_rect)
 
-        self.draw_alter_ego(self.rect,self.image,screen)
-        self.draw_alter_ego(self.face_rect,self.face_image,screen)
+        self.draw_wrap_image(self.rect,self.image,screen)
+        self.draw_wrap_image(self.face_rect,self.face_image,screen)
         
 
 
@@ -225,7 +225,7 @@ class Tail(GameObject):
         
     def update(self,screen):
         super().update(screen)
-        self.draw_alter_ego(self.rect,self.image,screen)
+        self.draw_wrap_image(self.rect,self.image,screen)
 
 
 
