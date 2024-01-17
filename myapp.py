@@ -318,8 +318,8 @@ while game_running:
     
     player.update(screen)
 
-    player.face_rect.center = player.rect.center
-    screen.blit(player.face_image, player.face_rect)
+    #player.face_rect.center = player.rect.center
+    #screen.blit(player.face_image, player.face_rect)
 
     # apply changes
     pygame.display.update()
