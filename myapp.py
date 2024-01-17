@@ -35,17 +35,64 @@ def load_image(file):
     img = img.convert_alpha()
     return img
 
-#player
-player = pygame.image.load("assets/player/blue_body_squircle.png")
-player_body = pygame.image.load("assets/player/blue_body_circle.png")
-player_face = pygame.image.load("assets/player/face_a.png")
-player = pygame.transform.scale_by(player, 0.5 )
-player_body = pygame.transform.scale_by(player_body, 0.5 )
-player_face = pygame.transform.scale_by(player_face, 0.5 )
-player_rect = player.get_rect()
-player_face_rect = player_face.get_rect()
-player_rect.center = TILESIZE[0]/2, TILESIZE[1]/2
-player_face_rect.center = player_rect.center
+
+class Player():
+    start_move_pos = (0,0)
+    end_move_pos = (0,0)
+    direction = (0,0)
+    def __init__(self, speed):
+        self.image = pygame.image.load("assets/player/blue_body_squircle.png")
+        self.image = pygame.transform.scale_by(self.image, 0.5 )
+        self.rect = self.image.get_rect()
+        self.rect.center = TILESIZE[0]/2, TILESIZE[1]/2
+
+        self.face_image = pygame.image.load("assets/player/face_a.png")
+        self.face_image = pygame.transform.scale_by(self.face_image, 0.5 )
+
+        self.face_rect = self.face_image.get_rect()
+        self.face_rect.center = self.rect.center
+        self.start_move_pos = self.rect.center
+        self.speed = speed
+
+    def setup_next_move(self, direction):
+        self.direction = direction
+        self.rect.center = self.end_move_pos
+        self.start_move_pos = self.end_move_pos
+
+    def is_end_of_move(self, dt_distance):
+        return abs(math.dist(self.rect.center, self.end_move_pos)) <= abs(dt_distance)
+    
+    def keep_moving(self, dt_distance):
+        velocity = (self.direction[0] * dt_distance, self.direction[1] * dt_distance)
+        self.rect = self.rect.move(velocity)
+
+    def move(self, dt_distance, new_direction, def_direction, continuous):
+        direction = self.direction
+        if direction != (0,0) or new_direction != (0,0):
+            if (self.is_end_of_move(dt_distance)):
+                if (continuous and new_direction == (0,0)):
+                    direction = def_direction
+                else:
+                    direction = new_direction
+                self.setup_next_move(direction)
+            else:
+                #keep moving we are not there yet
+                self.keep_moving(dt_distance)
+
+
+
+class Tail():
+    def __init__(self):
+        self.image = pygame.image.load("assets/player/blue_body_circle.png")
+        self.image = pygame.transform.scale_by(self.image, 0.5 )
+        self.rect = self.image.get_rect()
+        #self.rect.center = TILESIZE[0]/2, TILESIZE[1]/2
+
+
+
+
+player = Player(PLAYERNORMALSPEED)
+player_body = Tail()
 player_tail = []
 
 #food
@@ -169,9 +216,7 @@ class KeyInput():
 #initialize the classes
 held_keys = KeyInput()
 delta_time = DeltaTime()
-direction = (0,0)
-from_tile = player_rect.center
-player_current_speed = PLAYERNORMALSPEED
+
 continuous = True
 keypress_for_partialtime = False
 
@@ -181,33 +226,25 @@ while game_running:
 
     # indicating the number of miliseconds since the last time that piece of code was run
     dt = delta_time.loop_time()
-    dt_distance = player_current_speed * dt
+    
+    dt_distance = player.speed * dt
 
     game_running = held_keys.getEvents()
 
+    player.end_move_pos = (player.start_move_pos[0] + player.direction[0] * TILESIZE[0], player.start_move_pos[1] + player.direction[1] * TILESIZE[1])
+    
+    direction = player.direction
     new_direction = held_keys.get_first_of_remaining_pressed()
-    to_tile = (from_tile[0] + direction[0] * TILESIZE[0], from_tile[1] + direction[1] * TILESIZE[1])
+    def_direction = held_keys.get_last_direction_chosen()
+ 
+    # do we have a direction?
+    player.move(dt_distance,new_direction,def_direction,continuous)
 
-    # we have a direction
-    if direction != (0,0) or new_direction != (0,0):
-        dist_to_dest = abs(math.dist(player_rect.center, to_tile))
-        if (dist_to_dest <= abs(dt_distance)):
-            player_rect.center = to_tile
-            from_tile = to_tile
-            if (continuous and new_direction == (0,0)):
-                direction = held_keys.get_last_direction_chosen()
-            else:
-                direction = new_direction
-        else:
-            velocity = (direction[0] * dt_distance, direction[1] * dt_distance)
-            player_rect = player_rect.move(velocity)
-
-
-    if (player_rect.center == food_rect.center):
+    if (player.rect.center == food_rect.center):
         x = random.randrange(0, 20)
         y = random.randrange(0, 14)
         food_rect.center = (TILESIZE[0] * x + TILESIZE[0]/2) , (TILESIZE[1] * y + TILESIZE[1]/2)
-        player_tail.append(player_rect)
+        player_tail.append(player.rect)
         
 
     #clear the display
@@ -217,12 +254,12 @@ while game_running:
     screen.blit(food, food_rect)
     
     for t in player_tail:
-        if t != player_rect:
-            screen.blit(player_body,t)
+        if t != player.rect:
+            screen.blit(player_body.image,t)
     
-    screen.blit(player, player_rect)
-    player_face_rect.center = player_rect.center
-    screen.blit(player_face, player_face_rect)
+    screen.blit(player.image, player.rect)
+    player.face_rect.center = player.rect.center
+    screen.blit(player.face_image, player.face_rect)
 
     # apply changes
     pygame.display.update()
