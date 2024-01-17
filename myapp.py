@@ -249,6 +249,14 @@ keypress_for_partialtime = False
 player.end_move_pos = (player.start_move_pos[0] + player.direction[0] * TILESIZE[0], player.start_move_pos[1] + player.direction[1] * TILESIZE[1])
 
 #game loop
+def eat_food(TILESIZE, player, food_rect):
+    if (player.rect.center == food_rect.center):
+        x = random.randrange(0, 20)
+        y = random.randrange(0, 14)
+        food_rect.center = (TILESIZE[0] * x + TILESIZE[0]/2) , (TILESIZE[1] * y + TILESIZE[1]/2)
+        return True
+    return False
+
 while game_running:
     clock.tick(FPS)
 
@@ -268,11 +276,8 @@ while game_running:
     for t in player_tail:
         t.follow(dt_distance)
 
-    # move food and grow tail
-    if (player.rect.center == food_rect.center):
-        x = random.randrange(0, 20)
-        y = random.randrange(0, 14)
-        food_rect.center = (TILESIZE[0] * x + TILESIZE[0]/2) , (TILESIZE[1] * y + TILESIZE[1]/2)
+    # eat food and grow tail
+    if eat_food(TILESIZE, player, food_rect):
         t = Tail(PLAYERNORMALSPEED, TILESIZE)
         if (len(player_tail) > 0):
             f = player_tail[len(player_tail) - 1]
