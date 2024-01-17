@@ -25,7 +25,7 @@ pygame.init()
 clock = pygame.time.Clock()
 FPS = 60
 
-speed = 10
+#speed = 10
 # control variable
 game_running = True
 
@@ -89,16 +89,16 @@ class keyisdown():
             match (self.key_queue[0]): 
                 case "U":
                     if keys[pygame.K_UP] or keys[pygame.K_w]:
-                        return (0,-speed)
+                        return (0,-1)
                 case "D":
                     if keys[pygame.K_DOWN] or keys[pygame.K_s]:
-                        return (0,speed)
+                        return (0,1)
                 case "L":
                     if keys[pygame.K_LEFT] or keys[pygame.K_a]:
-                        return (-speed,0)
+                        return (-1,0)
                 case "R":
                     if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
-                        return (speed,0)
+                        return (1,0)
             
             #in-valid front of queue items are removed
             self.key_queue.pop(0)
@@ -122,7 +122,8 @@ while game_running:
     speed = 0.7 * dt
 
     game_running = held_keys.getEvents()
-    velocity = (x,y) = held_keys.get_first_of_remaining_pressed()
+    (x,y) = held_keys.get_first_of_remaining_pressed()
+    velocity = (x * speed, y * speed)
     player_loc = player_loc.move(velocity)
 
     #clear the display
