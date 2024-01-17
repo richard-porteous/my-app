@@ -1,7 +1,10 @@
+import math
 import pygame
 from pygame.locals import *
 
 
+TILESIZE = (80,80)
+PLAYERNORMALSPEED = 0.7
 
 # set window size
 size = width, height = (800, 600)
@@ -112,6 +115,9 @@ class keyisdown():
 #initialize the classes
 held_keys = keyisdown()
 delta_time = deltatime()
+direction = (0,0)
+from_tile = player_loc.center
+player_current_speed = PLAYERNORMALSPEED
 
 #game loop
 while game_running:
@@ -119,12 +125,26 @@ while game_running:
 
     # indicating the number of miliseconds since the last time that piece of code was run
     dt = delta_time.loop_time()
-    speed = 0.7 * dt
+    dt_distance = player_current_speed * dt
 
     game_running = held_keys.getEvents()
-    (x,y) = held_keys.get_first_of_remaining_pressed()
-    velocity = (x * speed, y * speed)
-    player_loc = player_loc.move(velocity)
+
+    new_direction = held_keys.get_first_of_remaining_pressed()
+    to_tile = (from_tile[0] + direction[0] * TILESIZE[0], from_tile[1] + direction[1] * TILESIZE[1])
+
+    # we have a direction
+    if direction != (0,0) or new_direction != (0,0):
+        print("movement")
+        # are we there yet?
+        dist_to_dest = abs(math.dist(player_loc.center, to_tile))
+        if (dist_to_dest <= abs(dt_distance)):
+            player_loc.center = to_tile
+            from_tile = to_tile
+            print("end of contineous movement")
+            direction = new_direction
+        else:
+            velocity = (direction[0] * dt_distance, direction[1] * dt_distance)
+            player_loc = player_loc.move(velocity)
 
     #clear the display
     screen.fill(white)
