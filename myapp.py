@@ -29,6 +29,20 @@ speed = 10
 # control variable
 game_running = True
 
+# time based movement requires delta time
+class deltatime():
+    def __init__(self):
+        self.last_loop = pygame.time.get_ticks()
+        self.dt = 0
+
+
+    def loop_time(self) -> int:
+        time_now_ms = pygame.time.get_ticks()
+        dt = time_now_ms - self.last_loop
+        self.last_loop = time_now_ms
+        return dt
+    
+
 class keyisdown():
     
     def __init__(self) -> None:
@@ -103,12 +117,17 @@ class keyisdown():
         self.key_queue = []
         
 
+#initialize the classes
 held_keys = keyisdown()
-
+delta_time = deltatime()
 
 #game loop
 while game_running:
     clock.tick(FPS)
+
+    # indicating the number of miliseconds since the last time that piece of code was run
+    dt = delta_time.loop_time()
+    speed = 0.7 * dt
 
     game_running = held_keys.getEvents()
     velocity = (x,y) = held_keys.get_first_of_remaining_pressed()
