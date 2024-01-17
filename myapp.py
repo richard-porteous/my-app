@@ -46,10 +46,6 @@ class deltatime():
 class keyisdown():
     
     def __init__(self) -> None:
-        self.leftkey = False
-        self.rightkey = False
-        self.upkey = False
-        self.downkey = False
         self.key_queue = []
 
     def getEvents(self):
@@ -58,57 +54,53 @@ class keyisdown():
             if event.type == QUIT:
                 self.key_queue.clear()
                 return False
-           
+            
+            # KEEP KEY PRESS ORDER
             if event.type==pygame.KEYDOWN:
                 if event.key == K_ESCAPE:
                     return False
                 if event.key in [K_s, K_DOWN]:
-                    self.downkey = True
                     self.key_queue.append("D")
                 if event.key in [K_w, K_UP]:
-                    self.upkey = True
                     self.key_queue.append("U")
                 if event.key in [K_d, K_RIGHT]:
-                    self.rightkey = True
                     self.key_queue.append("R")
                 if event.key in [K_a, K_LEFT]:
-                    self.leftkey = True
                     self.key_queue.append("L")
-               
+
+            # KEEP KEY PRESS ORDER (remove released from middle too)
             if event.type==pygame.KEYUP:
                 if event.key in [K_s, K_DOWN]:
-                    self.downkey = False
                     self.key_queue.remove("D")
                 if event.key in [K_w, K_UP]:
-                    self.upkey = False
                     self.key_queue.remove("U")
                 if event.key in [K_d, K_RIGHT]:
-                    self.rightkey = False
                     self.key_queue.remove("R")
                 if event.key in [K_a, K_LEFT]:
-                    self.leftkey = False
                     self.key_queue.remove("L")
         #if(self.upkey or self.rightkey or self.downkey or self.leftkey):
         #    print("up",self.upkey, "right", self.rightkey, "down", self.downkey, "left", self.leftkey)
         return True
     
     def get_first_of_remaining_pressed(self):
+        keys = pygame.key.get_pressed()
+
         while(len(self.key_queue) > 0):
             match (self.key_queue[0]): 
                 case "U":
-                    if self.upkey:
+                    if keys[pygame.K_UP] or keys[pygame.K_w]:
                         return (0,-speed)
                 case "D":
-                    if self.downkey:
+                    if keys[pygame.K_DOWN] or keys[pygame.K_s]:
                         return (0,speed)
                 case "L":
-                    if self.leftkey:
+                    if keys[pygame.K_LEFT] or keys[pygame.K_a]:
                         return (-speed,0)
                 case "R":
-                    if self.rightkey:
+                    if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
                         return (speed,0)
             
-            #should be removed if invalid or no longer valid
+            #in-valid front of queue items are removed
             self.key_queue.pop(0)
 
         return(0,0)
