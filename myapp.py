@@ -30,9 +30,14 @@ for x in range(0, width, int(TILESIZE[1])):
 
 #player
 player = pygame.image.load("assets/player/blue_body_squircle.png")
+player_body = pygame.image.load("assets/player/blue_body_circle.png")
+player_face = pygame.image.load("assets/player/face_a.png")
 player = pygame.transform.scale_by(player, 0.5 )
+player_body = pygame.transform.scale_by(player_body, 0.5 )
+player_face = pygame.transform.scale_by(player_face, 0.5 )
 player_loc = player.get_rect()
 player_loc.center = TILESIZE[0]/2, TILESIZE[1]/2
+player_tail = []
 
 #food
 food = pygame.image.load("assets/food/tile_coin.png")
@@ -193,6 +198,7 @@ while game_running:
         x = random.randrange(0, 20)
         y = random.randrange(0, 14)
         food_loc.center = (TILESIZE[0] * x + TILESIZE[0]/2) , (TILESIZE[1] * y + TILESIZE[1]/2)
+        player_tail.append(player_loc)
         
 
     #clear the display
@@ -200,7 +206,13 @@ while game_running:
 
     # place image on the screen
     screen.blit(food, food_loc)
+    
+    for t in player_tail:
+        if t != player_loc:
+            screen.blit(player_body,t)
+    
     screen.blit(player, player_loc)
+    screen.blit(player_face, player_loc)
 
     # apply changes
     pygame.display.update()
