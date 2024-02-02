@@ -21,7 +21,14 @@ start_speed = 0.4 * SCALESIZE
 screen_size = width, height = (STANDARD_IMAGE_SIZE[0] * ASPECT[0], STANDARD_IMAGE_SIZE[0] * ASPECT[1]) # 800,560 if 80x80
 screen = pygame.display.set_mode(screen_size)
 
+class SpriteObject(pygame.sprite.Sprite):
+    def __init__(self, img_file, scale = 1):
+        # Call the parent class (Sprite) constructor
+        pygame.sprite.Sprite.__init__(self)
 
+        self.image = pygame.image.load(img_file)
+        self.image = pygame.transform.scale_by(self.image, scale )
+        self.rect = self.image.get_rect()
 
 class GameObject():
     start_move_pos = (0,0)
@@ -131,11 +138,11 @@ class Player(GameObject):
         self.end_move_pos = (self.start_move_pos[0] + self.direction[0] * self.tilesize[0], self.start_move_pos[1] + self.direction[1] * self.tilesize[1])
 
 
-    def eat_food(self, food_rect):
-        if (self.rect.center == food_rect.center):
+    def eat_food(self, food):
+        if (self.rect.center == food.rect.center):
             x = random.randrange(0, 20)
             y = random.randrange(0, 14)
-            food_rect.center = (self.tilesize[0] * x + self.tilesize[0] * SCALESIZE) , (self.tilesize[1] * y + self.tilesize[1] * SCALESIZE)
+            food.rect.center = (self.tilesize[0] * x + self.tilesize[0] * SCALESIZE) , (self.tilesize[1] * y + self.tilesize[1] * SCALESIZE)
             return True
         return False
     
@@ -270,10 +277,8 @@ player = Player(start_speed, TILESIZE, screen_size)
 player_tail = []
 
 #food
-food = pygame.image.load("assets/food/tile_coin.png")
-food = pygame.transform.scale_by(food, 0.5 )
-food_rect = food.get_rect()
-food_rect.center = (TILESIZE[0] * 9 + TILESIZE[0]/2) , (TILESIZE[1] * 9 + TILESIZE[1]/2)
+food = SpriteObject("assets/food/tile_coin.png",SCALESIZE)
+food.rect.center = (TILESIZE[0] * 9 + TILESIZE[0]/2) , (TILESIZE[1] * 9 + TILESIZE[1]/2)
 
 # Initialize the pygame code
 pygame.init()
@@ -315,7 +320,7 @@ while game_running:
     for t in player_tail:
         t.move(move_start, dt_distance)
 
-    if player.eat_food(food_rect):
+    if player.eat_food(food):
         player.grow_tail(screen_size, start_speed, Tail, player, player_tail)
         
 
@@ -323,7 +328,8 @@ while game_running:
     screen.blit(background,(0,0))
 
     # place image on the screen
-    screen.blit(food, food_rect)
+    screen.blit(food.image, food.rect)
+    #food.Draw(screen)
     
     for t in player_tail:
         t.update(screen)
