@@ -24,14 +24,15 @@ screen = pygame.display.set_mode(screen_size)
 class SpriteObject(pygame.sprite.Sprite):
     def __init__(self, img_file, scale = 1):
         # Call the parent class (Sprite) constructor
-        pygame.sprite.Sprite.__init__(self)
+        #pygame.sprite.Sprite.__init__(self)
+        super().__init__()
 
         self.image = pygame.image.load(img_file)
         self.image = pygame.transform.scale_by(self.image, scale )
         self.rect = self.image.get_rect()
     
 
-class GameObject():
+class GameObject(SpriteObject):
     start_move_pos = (0,0)
     end_move_pos = (0,0)
     direction = (0,0)
@@ -44,11 +45,9 @@ class GameObject():
     last_boundary_check = "none"
     
     def __init__(self, speed, tilesize, img_file, screen_size):
+        super().__init__(img_file, SCALESIZE)
         self.tilesize = tilesize
-        self.image = pygame.image.load(img_file)
-        self.image = pygame.transform.scale_by(self.image, 0.5 )
-        self.rect = self.image.get_rect()
-        self.rect.center = tilesize[0]/2, tilesize[1]/2
+        
         self.start_move_pos = self.rect.center
         self.speed = speed
         self.max = screen_size
