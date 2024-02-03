@@ -129,6 +129,8 @@ class GameObject(SpriteObject):
 
 
 class Player(GameObject):
+    tail = []
+
     def __init__(self, speed, tilesize, screen_size):
         super().__init__(speed, tilesize, "assets/player/blue_body_squircle.png", screen_size)
         self.face_image = pygame.image.load("assets/player/face_a.png")
@@ -152,20 +154,20 @@ class Player(GameObject):
                 return True
         return False
 
-    def grow_tail(self, screen_size, start_speed, Tail, player, player_tail):
+    def grow_tail(self, screen_size, start_speed):
         t = Tail(start_speed, self.tilesize, screen_size)
-        if (len(player_tail) > 0):
-            f = player_tail[len(player_tail) - 1]
+        if (len(self.tail) > 0):
+            f = self.tail[len(self.tail) - 1]
             t.rect.center = f.rect.center
             t.end_move_pos = f.rect.center
             t.start_move_pos = f.rect.center
             t.object_to_follow = f
         else:
-            t.rect.center = player.rect.center
-            t.end_move_pos = player.rect.center
-            t.start_move_pos = player.rect.center
-            t.object_to_follow = player
-        player_tail.append(t)
+            t.rect.center = self.rect.center
+            t.end_move_pos = self.rect.center
+            t.start_move_pos = self.rect.center
+            t.object_to_follow = self
+        self.tail.append(t)
 
     def setup_next_move(self, direction, end_move_pos):
         self.last_end_move_pos = self.end_move_pos
@@ -275,7 +277,7 @@ food_group = pygame.sprite.Group()
 worm_group = pygame.sprite.Group()
 
 player = Player(start_speed, TILESIZE, screen_size)
-player_tail = []
+
 
 #food
 food = SpriteObject("assets/food/tile_coin.png",SCALESIZE)
@@ -319,11 +321,11 @@ while game_running:
  
     # do we have a direction?
     move_start = player.move(dt_distance,new_direction,def_direction,continuous)
-    for t in player_tail:
+    for t in player.tail:
         t.move(move_start, dt_distance)
 
     if player.eat_food(food):
-        player.grow_tail(screen_size, start_speed, Tail, player, player_tail)
+        player.grow_tail(screen_size, start_speed)
         
 
     #clear the display
@@ -333,7 +335,7 @@ while game_running:
     # screen.blit(food.image, food.rect)
     food_group.draw(screen)
     
-    for t in player_tail:
+    for t in player.tail:
         t.update(screen)
     
     player.update(screen)
@@ -344,7 +346,7 @@ while game_running:
     # apply changes
     pygame.display.update()
 
-    if player.collide(player_tail):
+    if player.collide(player.tail):
         game_running = False
 
 # quit the pygame window
