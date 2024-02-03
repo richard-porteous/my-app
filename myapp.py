@@ -128,8 +128,8 @@ class GameObject(SpriteObject):
         screen.blit(self.image,self.rect)
 
 
-class Player(GameObject):
-    tail = []
+class Head(GameObject):
+    tailpieces = []
 
     def __init__(self, speed, tilesize, screen_size):
         super().__init__(speed, tilesize, "assets/player/blue_body_squircle.png", screen_size)
@@ -156,8 +156,8 @@ class Player(GameObject):
 
     def grow_tail(self, screen_size, start_speed):
         t = Tail(start_speed, self.tilesize, screen_size)
-        if (len(self.tail) > 0):
-            f = self.tail[len(self.tail) - 1]
+        if (len(self.tailpieces) > 0):
+            f = self.tailpieces[len(self.tailpieces) - 1]
             t.rect.center = f.rect.center
             t.end_move_pos = f.rect.center
             t.start_move_pos = f.rect.center
@@ -167,7 +167,7 @@ class Player(GameObject):
             t.end_move_pos = self.rect.center
             t.start_move_pos = self.rect.center
             t.object_to_follow = self
-        self.tail.append(t)
+        self.tailpieces.append(t)
 
     def setup_next_move(self, direction, end_move_pos):
         self.last_end_move_pos = self.end_move_pos
@@ -276,7 +276,7 @@ pygame.display.update()
 food_group = pygame.sprite.Group()
 worm_group = pygame.sprite.Group()
 
-player = Player(start_speed, TILESIZE, screen_size)
+player = Head(start_speed, TILESIZE, screen_size)
 
 
 #food
@@ -311,7 +311,6 @@ while game_running:
     # indicating the number of miliseconds since the last time that piece of code was run
     dt = delta_time.loop_time()
     
-    dt_distance = player.speed * dt
 
     game_running = held_keys.getEvents()
 
@@ -320,8 +319,9 @@ while game_running:
     def_direction = held_keys.get_last_direction_chosen()
  
     # do we have a direction?
+    dt_distance = player.speed * dt
     move_start = player.move(dt_distance,new_direction,def_direction,continuous)
-    for t in player.tail:
+    for t in player.tailpieces:
         t.move(move_start, dt_distance)
 
     if player.eat_food(food):
@@ -335,7 +335,7 @@ while game_running:
     # screen.blit(food.image, food.rect)
     food_group.draw(screen)
     
-    for t in player.tail:
+    for t in player.tailpieces:
         t.update(screen)
     
     player.update(screen)
@@ -346,7 +346,7 @@ while game_running:
     # apply changes
     pygame.display.update()
 
-    if player.collide(player.tail):
+    if player.collide(player.tailpieces):
         game_running = False
 
 # quit the pygame window
