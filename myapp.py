@@ -326,7 +326,6 @@ while game_running:
 
     game_running = held_keys.getEvents()
 
-    direction = player.head.direction
     new_direction = held_keys.get_first_of_remaining_pressed()
     def_direction = held_keys.get_last_direction_chosen()
  
@@ -344,14 +343,10 @@ while game_running:
     screen.blit(background,(0,0))
 
     # place image on the screen
-    # screen.blit(food.image, food.rect)
     food_group.draw(screen)
     
     
     player.draw(screen)
-
-    #player.face_rect.center = player.rect.center
-    #screen.blit(player.face_image, player.face_rect)
 
     # apply changes
     pygame.display.update()
@@ -361,4 +356,3 @@ while game_running:
 
 # quit the pygame window
 pygame.quit()
-#the app exits
