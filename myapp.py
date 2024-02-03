@@ -129,7 +129,7 @@ class GameObject(SpriteObject):
 
 
 class Head(GameObject):
-    tailpieces = []
+    
 
     def __init__(self, speed, tilesize, screen_size):
         super().__init__(speed, tilesize, "assets/player/blue_body_squircle.png", screen_size)
@@ -154,20 +154,6 @@ class Head(GameObject):
                 return True
         return False
 
-    def grow_tail(self, screen_size, start_speed):
-        t = Tail(start_speed, self.tilesize, screen_size)
-        if (len(self.tailpieces) > 0):
-            f = self.tailpieces[len(self.tailpieces) - 1]
-            t.rect.center = f.rect.center
-            t.end_move_pos = f.rect.center
-            t.start_move_pos = f.rect.center
-            t.object_to_follow = f
-        else:
-            t.rect.center = self.rect.center
-            t.end_move_pos = self.rect.center
-            t.start_move_pos = self.rect.center
-            t.object_to_follow = self
-        self.tailpieces.append(t)
 
     def setup_next_move(self, direction, end_move_pos):
         self.last_end_move_pos = self.end_move_pos
@@ -250,9 +236,26 @@ class Tail(GameObject):
 
 class Player():
     tail_group = pygame.sprite.Group()
+    tailpieces = []
 
     def __init__(self, speed, tilesize, screen_size):
         self.head = Head(speed, tilesize, screen_size)
+
+    def grow_tail(self, screen_size, start_speed):
+        t = Tail(start_speed, self.head.tilesize, screen_size)
+        if (len(self.tailpieces) > 0):
+            f = self.tailpieces[len(self.tailpieces) - 1]
+            t.rect.center = f.rect.center
+            t.end_move_pos = f.rect.center
+            t.start_move_pos = f.rect.center
+            t.object_to_follow = f
+        else:
+            t.rect.center = self.head.rect.center
+            t.end_move_pos = self.head.rect.center
+            t.start_move_pos = self.head.rect.center
+            t.object_to_follow = self.head
+        self.tailpieces.append(t)
+
 
 
 # START OF GAME CODE
@@ -326,11 +329,11 @@ while game_running:
     # do we have a direction?
     dt_distance = player.head.speed * dt
     move_start = player.head.move(dt_distance,new_direction,def_direction,continuous)
-    for t in player.head.tailpieces:
+    for t in player.tailpieces:
         t.move(move_start, dt_distance)
 
     if player.head.eat_food(food):
-        player.head.grow_tail(screen_size, start_speed)
+        player.grow_tail(screen_size, start_speed)
         
 
     #clear the display
@@ -340,7 +343,7 @@ while game_running:
     # screen.blit(food.image, food.rect)
     food_group.draw(screen)
     
-    for t in player.head.tailpieces:
+    for t in player.tailpieces:
         t.update(screen)
     
     player.head.update(screen)
@@ -351,7 +354,7 @@ while game_running:
     # apply changes
     pygame.display.update()
 
-    if player.head.collide(player.head.tailpieces):
+    if player.head.collide(player.tailpieces):
         game_running = False
 
 # quit the pygame window
