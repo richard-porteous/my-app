@@ -248,6 +248,11 @@ class Tail(GameObject):
         super().update(screen)
         self.draw_wrap_image(self.rect,self.image,screen)
 
+class Player():
+    tail_group = pygame.sprite.Group()
+
+    def __init__(self, speed, tilesize, screen_size):
+        self.head = Head(speed, tilesize, screen_size)
 
 
 # START OF GAME CODE
@@ -274,9 +279,9 @@ screen.blit(background,(0,0))
 pygame.display.update()
 
 food_group = pygame.sprite.Group()
-worm_group = pygame.sprite.Group()
 
-player = Head(start_speed, TILESIZE, screen_size)
+
+player = Player(start_speed, TILESIZE, screen_size)
 
 
 #food
@@ -314,18 +319,18 @@ while game_running:
 
     game_running = held_keys.getEvents()
 
-    direction = player.direction
+    direction = player.head.direction
     new_direction = held_keys.get_first_of_remaining_pressed()
     def_direction = held_keys.get_last_direction_chosen()
  
     # do we have a direction?
-    dt_distance = player.speed * dt
-    move_start = player.move(dt_distance,new_direction,def_direction,continuous)
-    for t in player.tailpieces:
+    dt_distance = player.head.speed * dt
+    move_start = player.head.move(dt_distance,new_direction,def_direction,continuous)
+    for t in player.head.tailpieces:
         t.move(move_start, dt_distance)
 
-    if player.eat_food(food):
-        player.grow_tail(screen_size, start_speed)
+    if player.head.eat_food(food):
+        player.head.grow_tail(screen_size, start_speed)
         
 
     #clear the display
@@ -335,10 +340,10 @@ while game_running:
     # screen.blit(food.image, food.rect)
     food_group.draw(screen)
     
-    for t in player.tailpieces:
+    for t in player.head.tailpieces:
         t.update(screen)
     
-    player.update(screen)
+    player.head.update(screen)
 
     #player.face_rect.center = player.rect.center
     #screen.blit(player.face_image, player.face_rect)
@@ -346,7 +351,7 @@ while game_running:
     # apply changes
     pygame.display.update()
 
-    if player.collide(player.tailpieces):
+    if player.head.collide(player.head.tailpieces):
         game_running = False
 
 # quit the pygame window
