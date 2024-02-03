@@ -29,6 +29,7 @@ class SpriteObject(pygame.sprite.Sprite):
         self.image = pygame.image.load(img_file)
         self.image = pygame.transform.scale_by(self.image, scale )
         self.rect = self.image.get_rect()
+    
 
 class GameObject():
     start_move_pos = (0,0)
@@ -271,7 +272,8 @@ screen.blit(background,(0,0))
 # Early update the display for background
 pygame.display.update()
 
-
+food_group = pygame.sprite.Group()
+worm_group = pygame.sprite.Group()
 
 player = Player(start_speed, TILESIZE, screen_size)
 player_tail = []
@@ -279,6 +281,7 @@ player_tail = []
 #food
 food = SpriteObject("assets/food/tile_coin.png",SCALESIZE)
 food.rect.center = (TILESIZE[0] * 9 + TILESIZE[0]/2) , (TILESIZE[1] * 9 + TILESIZE[1]/2)
+food_group.add(food)
 
 # Initialize the pygame code
 pygame.init()
@@ -328,8 +331,8 @@ while game_running:
     screen.blit(background,(0,0))
 
     # place image on the screen
-    screen.blit(food.image, food.rect)
-    #food.Draw(screen)
+    # screen.blit(food.image, food.rect)
+    food_group.draw(screen)
     
     for t in player_tail:
         t.update(screen)
