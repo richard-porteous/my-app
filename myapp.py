@@ -124,7 +124,7 @@ class GameObject(SpriteObject):
             screen.blit(image, shifted_rect)
 
 
-    def update(self, screen):
+    def draw(self, screen):
         screen.blit(self.image,self.rect)
 
 
@@ -189,8 +189,8 @@ class Head(GameObject):
 
         return False
 
-    def update(self,screen):
-        super().update(screen)
+    def draw(self,screen):
+        super().draw(screen)
         self.face_rect.center = self.rect.center
         screen.blit(self.face_image, self.face_rect)
 
@@ -230,8 +230,8 @@ class Tail(GameObject):
             self.collide_rect.center = self.rect.center
             t.follow(dt_distance)
         
-    def update(self,screen):
-        super().update(screen)
+    def draw(self,screen):
+        super().draw(screen)
         self.draw_wrap_image(self.rect,self.image,screen)
 
 class Player():
@@ -243,6 +243,7 @@ class Player():
 
     def grow_tail(self, screen_size, start_speed):
         t = Tail(start_speed, self.head.tilesize, screen_size)
+        self.tail_group.add(t)
         if (len(self.tailpieces) > 0):
             f = self.tailpieces[len(self.tailpieces) - 1]
             t.rect.center = f.rect.center
@@ -256,6 +257,9 @@ class Player():
             t.object_to_follow = self.head
         self.tailpieces.append(t)
 
+    def draw(self, screen):
+        self.head.draw(screen)
+        self.tail_group.draw(screen)
 
 
 # START OF GAME CODE
@@ -343,10 +347,8 @@ while game_running:
     # screen.blit(food.image, food.rect)
     food_group.draw(screen)
     
-    for t in player.tailpieces:
-        t.update(screen)
     
-    player.head.update(screen)
+    player.draw(screen)
 
     #player.face_rect.center = player.rect.center
     #screen.blit(player.face_image, player.face_rect)
