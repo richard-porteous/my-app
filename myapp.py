@@ -203,6 +203,13 @@ class Tail(GameObject):
     def __init__(self, speed, tilesize, screen_size):
         super().__init__(speed, tilesize, "assets/player/blue_body_circle.png", screen_size)
     
+    def add_object_to_follow(self, obj):
+        self.add_object_to_follow = obj
+        self.rect.center = obj.rect.center
+        self.end_move_pos = obj.rect.center
+        self.start_move_pos = obj.rect.center
+
+
     def complete_move(self):
         self.last_end_move_pos = self.end_move_pos
         self.last_start_move_pos = self.start_move_pos
@@ -244,18 +251,29 @@ class Player():
     def grow_tail(self, screen_size, start_speed):
         t = Tail(start_speed, self.head.tilesize, screen_size)
         self.tail_group.add(t)
+        
         if (len(self.tailpieces) > 0):
-            f = self.tailpieces[len(self.tailpieces) - 1]
-            t.rect.center = f.rect.center
-            t.end_move_pos = f.rect.center
-            t.start_move_pos = f.rect.center
-            t.object_to_follow = f
+            t.add_object_to_follow(self.tailpieces[len(self.tailpieces) - 1])
         else:
-            t.rect.center = self.head.rect.center
-            t.end_move_pos = self.head.rect.center
-            t.start_move_pos = self.head.rect.center
-            t.object_to_follow = self.head
+            t.add_object_to_follow(self.head)
+
         self.tailpieces.append(t)
+
+    def update(self, dt, new_direction, def_direction):
+        dt_distance = self.head.speed * dt
+        move_start = self.head.move(dt_distance,new_direction,def_direction,True)
+        for t in self.tailpieces:
+            t.move(move_start, dt_distance)
+
+        if self.head.eat_food(food):
+            self.grow_tail(self.head.max, self.head.speed)
+
+        if self.head.collide(self.tailpieces):
+            return False
+        return True
+
+
+
 
     def draw(self, screen):
         self.head.draw(screen)
@@ -329,15 +347,8 @@ while game_running:
     new_direction = held_keys.get_first_of_remaining_pressed()
     def_direction = held_keys.get_last_direction_chosen()
  
-    # do we have a direction?
-    dt_distance = player.head.speed * dt
-    move_start = player.head.move(dt_distance,new_direction,def_direction,continuous)
-    for t in player.tailpieces:
-        t.move(move_start, dt_distance)
+    game_running = player.update(dt, new_direction, def_direction)
 
-    if player.head.eat_food(food):
-        player.grow_tail(screen_size, start_speed)
-        
 
     #clear the display
     screen.blit(background,(0,0))
@@ -345,14 +356,11 @@ while game_running:
     # place image on the screen
     food_group.draw(screen)
     
-    
     player.draw(screen)
 
     # apply changes
     pygame.display.update()
 
-    if player.head.collide(player.tailpieces):
-        game_running = False
 
 # quit the pygame window
 pygame.quit()
