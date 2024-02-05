@@ -18,8 +18,8 @@ FPS = 60
 #### global style variables
 start_speed = 0.4 * SCALESIZE
 # set window size
-screen_size = width, height = (STANDARD_IMAGE_SIZE[0] * ASPECT[0], STANDARD_IMAGE_SIZE[0] * ASPECT[1]) # 800,560 if 80x80
-screen = pygame.display.set_mode(screen_size)
+SCREENSIZE = width, height = (STANDARD_IMAGE_SIZE[0] * ASPECT[0], STANDARD_IMAGE_SIZE[0] * ASPECT[1]) # 800,560 if 80x80
+screen = pygame.display.set_mode(SCREENSIZE)
 
 class GridObject(pygame.sprite.Sprite):
     def __init__(self, img_file, scale = 1, gridpos = (0,0)):
@@ -27,13 +27,18 @@ class GridObject(pygame.sprite.Sprite):
         #pygame.sprite.Sprite.__init__(self)
         super().__init__()
 
-        self.image = pygame.image.load(img_file)
-        self.image = pygame.transform.scale_by(self.image, scale )
+        self.image = self.get_loaded_and_scaled_image(img_file, scale )
         self.rect = self.image.get_rect()
         self.rect.center = self.get_px_center_from_gridpos(gridpos)
     
+    def get_loaded_and_scaled_image(self, img_file, scale) -> pygame.surface:
+        image = pygame.image.load(img_file)
+        image = pygame.transform.scale_by(image, scale )
+        return image
+
     def get_px_center_from_gridpos(self, gridpos):
-        return (SCALEDTILESIZE[0] * gridpos[0] + SCALEDTILESIZE[0]/2) , (SCALEDTILESIZE[1] * gridpos[0] + SCALEDTILESIZE[1]/2)
+        x,y = (SCALEDTILESIZE[0] * gridpos[0] + SCALEDTILESIZE[0]/2) , (SCALEDTILESIZE[1] * gridpos[1] + SCALEDTILESIZE[1]/2)
+        return (x,y)
 
 class GameObject(GridObject):
     start_move_pos = (0,0)
@@ -47,13 +52,13 @@ class GameObject(GridObject):
     last_direction = (0,0)
     last_boundary_check = "none"
     
-    def __init__(self, speed, tilesize, img_file, screen_size):
+    def __init__(self, speed, tilesize, img_file):
         super().__init__(img_file, SCALESIZE)
         self.tilesize = tilesize
         
         self.start_move_pos = self.rect.center
         self.speed = speed
-        self.max = screen_size
+        self.max = SCREENSIZE
         self.collide_rect = Rect(self.rect[0] + self.rect[2]/2, self.rect[1] + self.rect[3]/2, self.rect[2]/2, self.rect[3]/2) #left,top,width,height
         self.just_created = True
 
@@ -134,12 +139,14 @@ class GameObject(GridObject):
 class Head(GameObject):
     
 
-    def __init__(self, speed, tilesize, screen_size):
-        super().__init__(speed, tilesize, "assets/player/blue_body_squircle.png", screen_size)
-        self.face_image = pygame.image.load("assets/player/face_a.png")
-        self.face_image = pygame.transform.scale_by(self.face_image, 0.5 )
+    def __init__(self, speed, tilesize):
+        super().__init__(speed, tilesize, "assets/player/blue_body_squircle.png")
+        self.face_image = self.get_loaded_and_scaled_image("assets/player/face_a.png",SCALESIZE)
+        
         self.face_rect = self.face_image.get_rect()
         self.face_rect.center = self.rect.center
+        self.image.blit(self.face_image, self.face_rect)
+
         self.end_move_pos = (self.start_move_pos[0] + self.direction[0] * self.tilesize[0], self.start_move_pos[1] + self.direction[1] * self.tilesize[1])
 
 
@@ -171,7 +178,7 @@ class Head(GameObject):
         self.end_move_pos = (self.start_move_pos[0] + self.direction[0] * self.tilesize[0], self.start_move_pos[1] + self.direction[1] * self.tilesize[1])
 
 
-    def move(self, dt_distance, new_direction, def_direction, continuous):
+    def update(self, dt_distance, new_direction, def_direction, continuous):
         direction = self.direction
         if direction != (0,0) or new_direction != (0,0):
 
@@ -195,8 +202,6 @@ class Head(GameObject):
 
     def draw(self,screen):
         super().draw(screen)
-        self.face_rect.center = self.rect.center
-        screen.blit(self.face_image, self.face_rect)
 
         self.draw_wrap_image(self.rect,self.image,screen)
         self.draw_wrap_image(self.face_rect,self.face_image,screen)
@@ -204,8 +209,8 @@ class Head(GameObject):
 
 
 class Tail(GameObject):
-    def __init__(self, speed, tilesize, screen_size):
-        super().__init__(speed, tilesize, "assets/player/blue_body_circle.png", screen_size)
+    def __init__(self, speed, tilesize):
+        super().__init__(speed, tilesize, "assets/player/blue_body_circle.png")
     
     def add_object_to_follow(self, obj):
         self.object_to_follow = obj
@@ -232,7 +237,7 @@ class Tail(GameObject):
         self.check_boundaries()
         self.keep_moving(dt_distance)
 
-    def move(self, move_start, dt_distance):
+    def update(self, move_start, dt_distance):
         if move_start:
             self.collide_rect.center = self.rect.center
             self.just_created = False
@@ -249,11 +254,11 @@ class Player():
     tail_group = pygame.sprite.Group()
     tailpieces = []
 
-    def __init__(self, speed, tilesize, screen_size):
-        self.head = Head(speed, tilesize, screen_size)
+    def __init__(self, speed, tilesize):
+        self.head = Head(speed, tilesize)
 
     def grow_tail(self, screen_size, start_speed):
-        t = Tail(start_speed, self.head.tilesize, screen_size)
+        t = Tail(start_speed, self.head.tilesize)
         self.tail_group.add(t)
         
         if (len(self.tailpieces) > 0):
@@ -265,9 +270,8 @@ class Player():
 
     def update(self, dt, new_direction, def_direction):
         dt_distance = self.head.speed * dt
-        move_start = self.head.move(dt_distance,new_direction,def_direction,True)
-        for t in self.tailpieces:
-            t.move(move_start, dt_distance)
+        move_start = self.head.update(dt_distance,new_direction,def_direction,True)
+        self.tail_group.update(move_start, dt_distance)
 
         if self.head.eat_food(food):
             self.grow_tail(self.head.max, self.head.speed)
@@ -294,12 +298,13 @@ background.fill(WHITE)
 # draw grid on background
 x_tile_pos = []
 y_tile_pos = []
-for y in range(0, height, int(SCALEDTILESIZE[0])):
+for y in range(0, SCREENSIZE[1], int(SCALEDTILESIZE[0])):
     y_tile_pos.append(y + int(SCALEDTILESIZE[0])/2)
-    pygame.draw.line(background, BLACK, (0,y), (width,y))
-for x in range(0, width, int(SCALEDTILESIZE[1])):
+    pygame.draw.line(background, BLACK, (0,y), (SCREENSIZE[0],y))
+
+for x in range(0, SCREENSIZE[0], int(SCALEDTILESIZE[1])):
     x_tile_pos.append(x + int(SCALEDTILESIZE[1])/2)
-    pygame.draw.line(background, BLACK, (x,0), (x,height))
+    pygame.draw.line(background, BLACK, (x,0), (x,SCREENSIZE[1]))
 
 screen.blit(background,(0,0))
 #### end background ####
@@ -310,7 +315,7 @@ pygame.display.update()
 food_group = pygame.sprite.Group()
 
 
-player = Player(start_speed, SCALEDTILESIZE, screen_size)
+player = Player(start_speed, SCALEDTILESIZE)
 
 
 #food
