@@ -141,6 +141,7 @@ class Head(GameObject):
 
 
     def eat_food(self, food):
+        # the actual placing of the food should be done by food
         if (self.rect.center == food.rect.center):
             x = random.randrange(0, 20)
             y = random.randrange(0, 14)
@@ -341,9 +342,8 @@ while game_running:
     # indicating the number of miliseconds since the last time that piece of code was run
     dt = delta_time.loop_time()
     
-
+    # get input
     game_running = held_keys.getEvents()
-
     new_direction = held_keys.get_first_of_remaining_pressed()
     def_direction = held_keys.get_last_direction_chosen()
  
@@ -354,9 +354,8 @@ while game_running:
     #clear the display
     screen.blit(background,(0,0))
 
-    # place image on the screen
+    # place images on the screen
     food_group.draw(screen)
-    
     player.draw(screen)
 
     # apply changes
