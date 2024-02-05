@@ -59,7 +59,15 @@ class GameObject(GridObject):
         self.start_move_pos = self.rect.center
         self.speed = speed
         self.max = SCREENSIZE
-        self.collide_rect = Rect(self.rect[0] + self.rect[2]/2, self.rect[1] + self.rect[3]/2, self.rect[2]/2, self.rect[3]/2) #left,top,width,height
+        self.collide_rect = Rect(
+            self.rect[0] + self.rect[2]/2 - 1, 
+            self.rect[1] + self.rect[3]/2 - 1, 
+            self.rect[2] - self.rect[2]/2 + 1, 
+            self.rect[3] - self.rect[3]/2 + 1) #left,top,width,height
+        #print("==============")
+        #print(self.rect)
+        #print(self.collide_rect)
+        #print("==============")
         self.just_created = True
 
     
