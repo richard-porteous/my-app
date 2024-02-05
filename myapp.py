@@ -204,7 +204,7 @@ class Tail(GameObject):
         super().__init__(speed, tilesize, "assets/player/blue_body_circle.png", screen_size)
     
     def add_object_to_follow(self, obj):
-        self.add_object_to_follow = obj
+        self.object_to_follow = obj
         self.rect.center = obj.rect.center
         self.end_move_pos = obj.rect.center
         self.start_move_pos = obj.rect.center
@@ -232,10 +232,10 @@ class Tail(GameObject):
         if move_start:
             self.collide_rect.center = self.rect.center
             self.just_created = False
-            t.complete_move()
+            self.complete_move()
         else:
             self.collide_rect.center = self.rect.center
-            t.follow(dt_distance)
+            self.follow(dt_distance)
         
     def draw(self,screen):
         super().draw(screen)
@@ -269,8 +269,8 @@ class Player():
             self.grow_tail(self.head.max, self.head.speed)
 
         if self.head.collide(self.tailpieces):
-            return False
-        return True
+            return True
+        return False
 
 
 
@@ -347,8 +347,9 @@ while game_running:
     new_direction = held_keys.get_first_of_remaining_pressed()
     def_direction = held_keys.get_last_direction_chosen()
  
-    game_running = player.update(dt, new_direction, def_direction)
-
+    player_collide = player.update(dt, new_direction, def_direction)
+    if player_collide:
+        game_running = False
 
     #clear the display
     screen.blit(background,(0,0))
