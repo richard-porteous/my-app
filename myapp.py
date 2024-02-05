@@ -11,7 +11,7 @@ WHITE = (255,255,255)
 STANDARD_IMAGE_SIZE = (80,80)
 ASPECT = (10,7)
 SCALESIZE = 0.5
-TILESIZE = (STANDARD_IMAGE_SIZE[0] * SCALESIZE, STANDARD_IMAGE_SIZE[1] * SCALESIZE)
+SCALEDTILESIZE = (STANDARD_IMAGE_SIZE[0] * SCALESIZE, STANDARD_IMAGE_SIZE[1] * SCALESIZE)
 # Max frame rate
 FPS = 60
 
@@ -21,8 +21,8 @@ start_speed = 0.4 * SCALESIZE
 screen_size = width, height = (STANDARD_IMAGE_SIZE[0] * ASPECT[0], STANDARD_IMAGE_SIZE[0] * ASPECT[1]) # 800,560 if 80x80
 screen = pygame.display.set_mode(screen_size)
 
-class SpriteObject(pygame.sprite.Sprite):
-    def __init__(self, img_file, scale = 1):
+class GridObject(pygame.sprite.Sprite):
+    def __init__(self, img_file, scale = 1, gridpos = (0,0)):
         # Call the parent class (Sprite) constructor
         #pygame.sprite.Sprite.__init__(self)
         super().__init__()
@@ -30,9 +30,12 @@ class SpriteObject(pygame.sprite.Sprite):
         self.image = pygame.image.load(img_file)
         self.image = pygame.transform.scale_by(self.image, scale )
         self.rect = self.image.get_rect()
+        self.rect.center = self.get_px_center_from_gridpos(gridpos)
     
+    def get_px_center_from_gridpos(self, gridpos):
+        return (SCALEDTILESIZE[0] * gridpos[0] + SCALEDTILESIZE[0]/2) , (SCALEDTILESIZE[1] * gridpos[0] + SCALEDTILESIZE[1]/2)
 
-class GameObject(SpriteObject):
+class GameObject(GridObject):
     start_move_pos = (0,0)
     end_move_pos = (0,0)
     direction = (0,0)
@@ -145,7 +148,7 @@ class Head(GameObject):
         if (self.rect.center == food.rect.center):
             x = random.randrange(0, 20)
             y = random.randrange(0, 14)
-            food.rect.center = (self.tilesize[0] * x + self.tilesize[0] * SCALESIZE) , (self.tilesize[1] * y + self.tilesize[1] * SCALESIZE)
+            food.rect.center = food.get_px_center_from_gridpos((x,y))
             return True
         return False
     
@@ -291,11 +294,11 @@ background.fill(WHITE)
 # draw grid on background
 x_tile_pos = []
 y_tile_pos = []
-for y in range(0, height, int(TILESIZE[0])):
-    y_tile_pos.append(y + int(TILESIZE[0])/2)
+for y in range(0, height, int(SCALEDTILESIZE[0])):
+    y_tile_pos.append(y + int(SCALEDTILESIZE[0])/2)
     pygame.draw.line(background, BLACK, (0,y), (width,y))
-for x in range(0, width, int(TILESIZE[1])):
-    x_tile_pos.append(x + int(TILESIZE[1])/2)
+for x in range(0, width, int(SCALEDTILESIZE[1])):
+    x_tile_pos.append(x + int(SCALEDTILESIZE[1])/2)
     pygame.draw.line(background, BLACK, (x,0), (x,height))
 
 screen.blit(background,(0,0))
@@ -307,12 +310,11 @@ pygame.display.update()
 food_group = pygame.sprite.Group()
 
 
-player = Player(start_speed, TILESIZE, screen_size)
+player = Player(start_speed, SCALEDTILESIZE, screen_size)
 
 
 #food
-food = SpriteObject("assets/food/tile_coin.png",SCALESIZE)
-food.rect.center = (TILESIZE[0] * 9 + TILESIZE[0]/2) , (TILESIZE[1] * 9 + TILESIZE[1]/2)
+food = GridObject("assets/food/tile_coin.png",SCALESIZE, (9,9))
 food_group.add(food)
 
 # Initialize the pygame code
