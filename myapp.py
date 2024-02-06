@@ -12,14 +12,34 @@ STANDARD_IMAGE_SIZE = (80,80)
 ASPECT = (10,7)
 SCALESIZE = 0.5
 SCALEDTILESIZE = (STANDARD_IMAGE_SIZE[0] * SCALESIZE, STANDARD_IMAGE_SIZE[1] * SCALESIZE)
-# Max frame rate
-FPS = 60
+
 
 #### global style variables
 start_speed = 0.4 * SCALESIZE
 # set window size
 SCREENSIZE = width, height = (STANDARD_IMAGE_SIZE[0] * ASPECT[0], STANDARD_IMAGE_SIZE[0] * ASPECT[1]) # 800,560 if 80x80
 screen = pygame.display.set_mode(SCREENSIZE)
+
+#build background
+
+#grid centers - get while drawing grid lines on the background
+x_tile_pos = []
+y_tile_pos = []
+
+background = pygame.Surface.copy(screen)
+background.fill(WHITE)
+# draw grid on background
+screen_width = SCREENSIZE[0]
+screen_length = SCREENSIZE[1]
+#draw vertical lines on background
+for x in range(0, SCREENSIZE[0], int(SCALEDTILESIZE[1])):
+    x_tile_pos.append(x + int(SCALEDTILESIZE[1])/2)
+    pygame.draw.line(background, BLACK, (x,0), (x,screen_length))
+#draw horizontal lines on background
+for y in range(0, SCREENSIZE[1], int(SCALEDTILESIZE[0])):
+    y_tile_pos.append(y + int(SCALEDTILESIZE[0])/2)
+    pygame.draw.line(background, BLACK, (0,y), (screen_width,y))
+#### end build background ####
 
 class GridObject(pygame.sprite.Sprite):
     def __init__(self, img_file, scale = 1, gridpos = (0,0)):
@@ -37,8 +57,13 @@ class GridObject(pygame.sprite.Sprite):
         return image
 
     def get_px_center_from_gridpos(self, gridpos):
-        x,y = (SCALEDTILESIZE[0] * gridpos[0] + SCALEDTILESIZE[0]/2) , (SCALEDTILESIZE[1] * gridpos[1] + SCALEDTILESIZE[1]/2)
+        #x,y = (SCALEDTILESIZE[0] * gridpos[0] + SCALEDTILESIZE[0]/2) , (SCALEDTILESIZE[1] * gridpos[1] + SCALEDTILESIZE[1]/2)
+        x,y = x_tile_pos[gridpos[0]], y_tile_pos[gridpos[1]]
         return (x,y)
+
+    def get_tile_center_positions(self):
+        return (x_tile_pos,y_tile_pos) 
+
 
 class GameObject(GridObject):
     start_move_pos = (0,0)
@@ -63,7 +88,7 @@ class GameObject(GridObject):
             self.rect[0] + self.rect[2]/2 - 1, 
             self.rect[1] + self.rect[3]/2 - 1, 
             self.rect[2] - self.rect[2]/2 + 1, 
-            self.rect[3] - self.rect[3]/2 + 1) #left,top,width,height
+            self.rect[3] - self.rect[3]/2 + 1)
         #print("==============")
         #print(self.rect)
         #print(self.collide_rect)
@@ -75,6 +100,19 @@ class GameObject(GridObject):
     def is_end_of_move(self, dt_distance):
         return abs(math.dist(self.rect.center, self.end_move_pos)) <= abs(dt_distance)
     
+    def setup_next_move(self, direction, end_move_pos):
+        self.last_end_move_pos = self.end_move_pos
+        self.last_start_move_pos = self.start_move_pos
+        self.last_direction = self.direction
+        self.last_boundary_check = self.boundary_check
+
+        self.direction = self.fix_direction(direction)
+        self.rect.center = end_move_pos
+        self.start_move_pos = end_move_pos
+        self.end_move_pos = self.get_destination(self.start_move_pos, self.direction)
+
+
+
     def keep_moving(self, dt_distance):
         velocity = (self.direction[0] * dt_distance, self.direction[1] * dt_distance)
         self.rect = self.rect.move(velocity)
@@ -90,9 +128,6 @@ class GameObject(GridObject):
 
         return (dx, dy)
     
-    def get_tile_center_positions(self):
-        return (x_tile_pos,y_tile_pos) 
-
     #currently only works with 4 directions
     def check_boundaries(self):
         x_pos,y_pos = self.get_tile_center_positions()
@@ -144,6 +179,10 @@ class GameObject(GridObject):
         screen.blit(self.image,self.rect)
 
 
+    def get_destination(self, from_pos, direction, num_tiles = 1):
+        return (from_pos[0] + direction[0] * self.tilesize[0], from_pos[1] + direction[1] * self.tilesize[1])
+
+
 class Head(GameObject):
     
 
@@ -151,11 +190,12 @@ class Head(GameObject):
         super().__init__(speed, tilesize, "assets/player/blue_body_squircle.png")
         self.face_image = self.get_loaded_and_scaled_image("assets/player/face_a.png",SCALESIZE)
         
+        ## draw 2nd image onto first
         self.face_rect = self.face_image.get_rect()
         self.face_rect.center = self.rect.center
         self.image.blit(self.face_image, self.face_rect)
 
-        self.end_move_pos = (self.start_move_pos[0] + self.direction[0] * self.tilesize[0], self.start_move_pos[1] + self.direction[1] * self.tilesize[1])
+        self.end_move_pos = self.get_destination(self.start_move_pos, self.direction)
 
 
     def eat_food(self, food):
@@ -173,17 +213,6 @@ class Head(GameObject):
                 return True
         return False
 
-
-    def setup_next_move(self, direction, end_move_pos):
-        self.last_end_move_pos = self.end_move_pos
-        self.last_start_move_pos = self.start_move_pos
-        self.last_direction = self.direction
-        self.last_boundary_check = self.boundary_check
-
-        self.direction = self.fix_direction(direction)
-        self.rect.center = end_move_pos
-        self.start_move_pos = end_move_pos
-        self.end_move_pos = (self.start_move_pos[0] + self.direction[0] * self.tilesize[0], self.start_move_pos[1] + self.direction[1] * self.tilesize[1])
 
 
     def update(self, dt_distance, new_direction, def_direction, continuous):
@@ -213,7 +242,6 @@ class Head(GameObject):
 
         self.draw_wrap_image(self.rect,self.image,screen)
         self.draw_wrap_image(self.face_rect,self.face_image,screen)
-        
 
 
 class Tail(GameObject):
@@ -239,7 +267,7 @@ class Tail(GameObject):
         self.end_move_pos = self.object_to_follow.last_end_move_pos
         self.boundary_check = self.object_to_follow.last_boundary_check
            
-        self.direction = self.object_to_follow.last_direction #self.fix_direction(self.end_move_pos, self.start_move_pos)
+        self.direction = self.object_to_follow.last_direction
 
     def follow(self, dt_distance):
         self.check_boundaries()
@@ -257,6 +285,7 @@ class Tail(GameObject):
     def draw(self,screen):
         super().draw(screen)
         self.draw_wrap_image(self.rect,self.image,screen)
+
 
 class Player():
     tail_group = pygame.sprite.Group()
@@ -289,75 +318,39 @@ class Player():
         return False
 
 
-
-
     def draw(self, screen):
         self.head.draw(screen)
         self.tail_group.draw(screen)
 
 
-# START OF GAME CODE
-
-
-#### build background - background is used to clear each frame ####
-background = pygame.Surface.copy(screen)
-background.fill(WHITE)
-
-# draw grid on background
-x_tile_pos = []
-y_tile_pos = []
-for y in range(0, SCREENSIZE[1], int(SCALEDTILESIZE[0])):
-    y_tile_pos.append(y + int(SCALEDTILESIZE[0])/2)
-    pygame.draw.line(background, BLACK, (0,y), (SCREENSIZE[0],y))
-
-for x in range(0, SCREENSIZE[0], int(SCALEDTILESIZE[1])):
-    x_tile_pos.append(x + int(SCALEDTILESIZE[1])/2)
-    pygame.draw.line(background, BLACK, (x,0), (x,SCREENSIZE[1]))
+# GAME CODE
 
 screen.blit(background,(0,0))
-#### end background ####
-
-# Early update the display for background
 pygame.display.update()
 
-food_group = pygame.sprite.Group()
-
-
 player = Player(start_speed, SCALEDTILESIZE)
-
-
-#food
 food = GridObject("assets/food/tile_coin.png",SCALESIZE, (9,9))
+
+# we use a group for food as the game can have more that one piece of food
+food_group = pygame.sprite.Group()
 food_group.add(food)
 
 # Initialize the pygame code
 pygame.init()
 clock = pygame.time.Clock()
+# Max frame rate
 FPS = 60
-
-#speed = 10
-# control variable
-game_running = True
-
-
-#initialize the classes
+# movement
 held_keys = KeyInput()
-delta_time = DeltaTime()
-
 continuous = True
-keypress_for_partialtime = False
-
-# control variable
+#keypress_for_partialtime = False
 game_running = True
 
 #game loop
 while game_running:
     clock.tick(FPS)
+    dt = clock.get_time()
 
-    # indicating the number of miliseconds since the last time that piece of code was run
-    dt = delta_time.loop_time()
-    
-    # get input
     game_running = held_keys.getEvents()
     new_direction = held_keys.get_first_of_remaining_pressed()
     def_direction = held_keys.get_last_direction_chosen()
@@ -368,12 +361,10 @@ while game_running:
 
     #clear the display
     screen.blit(background,(0,0))
-
     # place images on the screen
     food_group.draw(screen)
     player.draw(screen)
-
-    # apply changes
+    # apply screen changes
     pygame.display.update()
 
 

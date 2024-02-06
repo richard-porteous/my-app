@@ -4,6 +4,16 @@ from pygame.locals import *
 
 # time based movement requires delta time
 class DeltaTime():
+    """
+    could use 'dt = clock.get_time()' instead. 
+    It must be used with clock.tick(fps)
+    i.e.
+
+        clock.tick(fps)
+
+        dt = clock.get_time()
+    """
+
     def __init__(self):
         self.last_loop = pygame.time.get_ticks()
         self.dt = 0
