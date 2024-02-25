@@ -31,6 +31,8 @@ background.fill(WHITE)
 # draw grid on background
 screen_width = SCREENSIZE[0]
 screen_length = SCREENSIZE[1]
+
+## get grid centers and draw grid on background
 #draw vertical lines on background
 for x in range(0, SCREENSIZE[0], int(SCALEDTILESIZE[1])):
     x_tile_pos.append(x + int(SCALEDTILESIZE[1])/2)
@@ -41,11 +43,17 @@ for y in range(0, SCREENSIZE[1], int(SCALEDTILESIZE[0])):
     pygame.draw.line(background, BLACK, (0,y), (screen_width,y))
 #### end build background ####
 
+grid_objects = []
+
 class GridObject(pygame.sprite.Sprite):
+    go_counter = 0
+
     def __init__(self, img_file, scale = 1, gridpos = (0,0)):
         # Call the parent class (Sprite) constructor
         #pygame.sprite.Sprite.__init__(self)
         super().__init__()
+        GridObject.go_counter += 1
+        grid_objects.append(self)
 
         self.image = self.get_loaded_and_scaled_image(img_file, scale )
         self.rect = self.image.get_rect()
@@ -62,7 +70,10 @@ class GridObject(pygame.sprite.Sprite):
         return (x,y)
 
     def get_tile_center_positions(self):
-        return (x_tile_pos,y_tile_pos) 
+        return (x_tile_pos,y_tile_pos)
+    
+    def place_obj_on_grid_unique() -> bool:
+        return True
 
 
 class GameObject(GridObject):
@@ -80,7 +91,7 @@ class GameObject(GridObject):
     def __init__(self, speed, tilesize, img_file):
         super().__init__(img_file, SCALESIZE)
         self.tilesize = tilesize
-        
+        self.name = "obj"
         self.start_move_pos = self.rect.center
         self.speed = speed
         self.max = SCREENSIZE
@@ -95,7 +106,6 @@ class GameObject(GridObject):
         #print("==============")
         self.just_created = True
 
-    
 
     def is_end_of_move(self, dt_distance):
         return abs(math.dist(self.rect.center, self.end_move_pos)) <= abs(dt_distance)
@@ -188,6 +198,8 @@ class Head(GameObject):
 
     def __init__(self, speed, tilesize):
         super().__init__(speed, tilesize, "assets/player/blue_body_squircle.png")
+        self.name = "head"
+
         self.face_image = self.get_loaded_and_scaled_image("assets/player/face_a.png",SCALESIZE)
         
         ## draw 2nd image onto first
@@ -201,9 +213,22 @@ class Head(GameObject):
     def eat_food(self, food):
         # the actual placing of the food should be done by food
         if (self.rect.center == food.rect.center):
-            x = random.randrange(0, 20)
-            y = random.randrange(0, 14)
-            food.rect.center = food.get_px_center_from_gridpos((x,y))
+            
+            try_again = True
+            counter = 5
+            while try_again:
+                try_again = False
+                x = random.randrange(0, 20)
+                y = random.randrange(0, 14)
+                food.rect.center = food.get_px_center_from_gridpos((x,y))
+                for go in grid_objects:
+                    if go.name == "tail" or go.name == "head":
+                        if go.rect.center == food.rect.center:
+                            print(try_again, go.rect.center, food.rect.center)
+                            counter -= 1
+                            try_again = counter > 0
+            if counter == 0 :
+                pygame.quit() # another win condition
             return True
         return False
     
@@ -247,6 +272,8 @@ class Head(GameObject):
 class Tail(GameObject):
     def __init__(self, speed, tilesize):
         super().__init__(speed, tilesize, "assets/player/blue_body_circle.png")
+        self.name = "tail"
+
     
     def add_object_to_follow(self, obj):
         self.object_to_follow = obj
@@ -312,6 +339,8 @@ class Player():
 
         if self.head.eat_food(food):
             self.grow_tail(self.head.max, self.head.speed)
+        if GridObject.go_counter > 20:
+            pygame.quit() # win condition
 
         if self.head.collide(self.tailpieces):
             return True
@@ -330,6 +359,7 @@ pygame.display.update()
 
 player = Player(start_speed, SCALEDTILESIZE)
 food = GridObject("assets/food/tile_coin.png",SCALESIZE, (9,9))
+food.name = "food"
 
 # we use a group for food as the game can have more that one piece of food
 food_group = pygame.sprite.Group()
